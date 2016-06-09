@@ -13,74 +13,110 @@
 #define Y_DIR 1
 #define Z_DIR 2
 
-
-const static char *sSDKsample = "CUDA Bilateral Filter";
-
-cudaError_t addWithCuda(int *c, const int *a, const int *b, unsigned int size);
+//TODO solve shit with grid/block dimentions access of cube memory
 void define_kernel(float* output_kernel, float sigma, int size);
 
-__global__ void slicing (float *dev_image, const float*dev_cube_wi, const float*dev_cube_w, const dim3 imsize)
+__global__ void slicing(float *dev_image, const float*dev_cube_wi, const float*dev_cube_w, const dim3 imsize)
 {
 
 
 
-	const int i = blockIdx.x * blockDim.x + threadIdx.x;
-	const int j = blockIdx.y * blockDim.y + threadIdx.y;
+	int i = blockIdx.x * blockDim.x + threadIdx.x;
+	int j = blockIdx.y * blockDim.y + threadIdx.y;
 
 	//Only valid threads perform memory I/O
 	if ((i < imsize.x) && (j < imsize.y))
 	{
 
-		int value = (int)dev_image[i + imsize.x*j];
+		int value = (int)dev_image[j + imsize.y*i];
 		//printf("value = %d, i = %d, j = %d\n", value, i, j);
 
-		int cube_idx = i + imsize.x*j + imsize.x*imsize.y*value;
-		dev_image[i + imsize.x*j] = dev_cube_wi[cube_idx] / dev_cube_w[cube_idx];
-
+		unsigned int cube_idx = i + imsize.x*j + imsize.x*imsize.y*value;
+		dev_image[j + imsize.y*i] = dev_cube_wi[cube_idx] / dev_cube_w[cube_idx];
+		//printf("w = %f  wi = %f \n", dev_cube_w[cube_idx], dev_cube_wi[cube_idx]);
+		
 	}
-	else
-		printf("out of bounds\n");
+	//else
+		//printf("out of bounds\n");
 
 }
 __global__ void convolution(float *output, const float *input, const float* kernel, const int ksize,  const dim3 imsize, const int dir)
-{
-	int i = threadIdx.x;
-	//idx = x_i + imsize.x*y_i + imsize.x*imsize.y*z_i
-	int z_i = i / (imsize.x*imsize.y);
-	int y_i = (i - z_i*(imsize.x*imsize.y)) / imsize.x;
-	int x_i = i -y_i*imsize.x- z_i*(imsize.x*imsize.y);
+{	
+	unsigned int ix = blockDim.x*blockIdx.x + threadIdx.x;
+	unsigned int iy = blockDim.y*blockIdx.y + threadIdx.y;
+	unsigned int i = ix + iy*blockDim.x*gridDim.x;
+	//unsigned int i = blockDim.x*blockIdx.x + threadIdx.x;
+	int imsize_x = imsize.x;
+	int imsize_y = imsize.y;
+	int imsize_z = imsize.z;
+	unsigned int im_size = imsize_x*imsize_y*imsize_z;
+	//printf("i = %d\n", i);
+	//idx = x_i + imsize_x*y_i + imsize_x*imsize_y*z_i
+	unsigned int z_i = i / (imsize_x*imsize_y);
+	unsigned int y_i = (i - z_i*(imsize_x*imsize_y)) / imsize_x;
+	unsigned int x_i = i - y_i*imsize_x - z_i*(imsize_x*imsize_y);
 	
 	
-	float result = 0;
-	int k_offset = (ksize / 2);
-	for (int k = 0; k < ksize ; k++) {
+	double result = 0.0;
+	unsigned int idx = 0;
+	unsigned int k_offset = (ksize / 2);
+	for (int k = 0; k < ksize; k++) {
 		if (dir == X_DIR) {
 			int x_input = k_offset - k + x_i;
-			if (x_input > 0 && x_input < imsize.x) {
-				result += input[x_input + imsize.x*y_i + imsize.x*imsize.y*z_i];
+			if (x_input >= 0 && x_input < imsize_x) {
+				idx = x_input + imsize_x*y_i + imsize_x*imsize_y*z_i;
+				if (idx < im_size)
+					result += input[idx]*kernel[k];
 			}
+			//else
+				//printf("out of bounds\n");
 		}
 		else if (dir == Y_DIR) {
 			int y_input = k_offset - k + y_i;
-			if (y_input > 0 && y_input < imsize.y) {
-				result += input[x_i + imsize.y*y_input + imsize.x*imsize.y*z_i];
+
+			if (y_input >= 0 && y_input < imsize_y) {
+				idx = x_i + imsize_x*y_input + imsize_x*imsize_y*z_i;
+				if (idx < im_size)
+					result += input[idx] * kernel[k];
 			}
+			//else
+				//printf("out of bounds\n");
 		}
 		else if (dir == Z_DIR) {
 			int z_input = k_offset - k + z_i;
-			if (z_input > 0 && z_input < imsize.z) {
-				result += input[x_i + imsize.y*y_i + imsize.x*imsize.y*z_input];
+			//printf("z_input %f\n", z_input);
+			if (z_input >= 0 && z_input < imsize_z) {
+				idx = x_i + imsize_x*y_i + imsize_x*imsize_y*z_input;
+				if (idx < im_size)
+					result += input[idx] * kernel[k];
 			}
+			//else
+				//printf("out of bounds\n");
 		}
+		else
+			printf("All wrong");
 		
 	}
-	output[x_i + imsize.x*y_i + imsize.x*imsize.y*z_i] = result;
+	idx = x_i + imsize_x*y_i + imsize_x*imsize_y*z_i;
+	if (idx < im_size)
+		output[idx] = result / ksize;
 }
 
 
 int main(int argc, char **argv)
 {
-	std::cout << sizeof(float) << std::endl;
+
+	int deviceCount;
+	cudaGetDeviceCount(&deviceCount);
+	int device;
+	for (device = 0; device < deviceCount; ++device) {
+		cudaDeviceProp deviceProp;
+		cudaGetDeviceProperties(&deviceProp, device);
+		printf("Device %d has compute capability %d.%d and concurrentKernels = %d.\n",
+			device, deviceProp.major, deviceProp.minor, deviceProp.concurrentKernels);
+	}
+
+
 	//Load Image
 	
 	cv::Mat image;
@@ -92,23 +128,26 @@ int main(int argc, char **argv)
 	//Set up cubes
 	int size = image.rows*image.cols * 256;
 	float *cube_wi, *cube_w;
-	int kernel_size = 7;
+	int kernel_size = 33;
 	float *kernel = (float*)malloc(kernel_size*sizeof(float));
-	define_kernel(kernel, 3.0, kernel_size);
+	define_kernel(kernel, 11.5, kernel_size);
 
 
 	float *dev_cube_wi, *dev_cube_w, *dev_cube_wi_out, *dev_cube_w_out, *dev_kernel;
 	cube_wi = (float*)calloc(size, sizeof(float));
 	cube_w = (float*)calloc(size, sizeof(float));
-	//filling
+	//filling //PERFORM FILLING WITH CUDA KERNEL
+			//later try filling and doing z-direction conv. at once!
 	for (int i = 0; i < image.rows; i++) {
 		for (int j = 0; j < image.cols; j++) {
-			for (int k = 0; k < 256; k++) {
-				if (image.at<uchar>(i, j) == k) {
-					cube_wi[i + image.rows*j + image.rows*image.cols*k] = k;
-					cube_w[i + image.rows*j + image.rows*image.cols*k] = 1.0;
-				}
-			}
+			
+			unsigned int k = image.at<uchar>(i, j);
+			cube_wi[i + image.rows*j + image.rows*image.cols*k] = ((float)k );
+			//std::cout << k << std::endl;
+			cube_w[i + image.rows*j + image.rows*image.cols*k] = 1.0;
+					//std::cout << "assigned" << std::endl;
+				
+			
 		}
 	}
 	
@@ -163,35 +202,61 @@ int main(int argc, char **argv)
 	if (cudaStatus != cudaSuccess) {
 		fprintf(stderr, "cudaMemcpy failed!");
 	}
+	// block 64x64 and grid 128x128 or block 32 32 and grid 256 256
+	//ITS WRONG BUT WORKS FOR NOT A LOT OF THREADS IDK
+	const dim3 block(32, 32); //threads per block 32 32
 
-	/*convolution <<<1, size >>>(dev_cube_wi_out, dev_cube_wi, dev_kernel, kernel_size, image_dimensions, X_DIR);
-	float * temp = dev_cube_wi;
-	dev_cube_wi = dev_cube_wi_out;
-	dev_cube_wi_out = temp;
+	//Calculate grid size to cover the whole image
+	//int grid_n = ceil(sqrt(size) / (block.y));
+	int grin = 180;//256
+	const dim3 grid(grin, grin); //number of blocks
+	//int block = 1024;
+	//int grid = size / block;
 
-	convolution <<<1, size >>>(dev_cube_w_out, dev_cube_w, dev_kernel, kernel_size, image_dimensions, X_DIR);
-	temp = dev_cube_w;
-	dev_cube_w = dev_cube_w_out;
-	dev_cube_w_out = temp;
-	convolution <<<1, size >>>(dev_cube_wi_out, dev_cube_wi, dev_kernel, kernel_size, image_dimensions, Y_DIR);
+	convolution << <grid, block >> >(dev_cube_wi_out, dev_cube_wi, dev_kernel, kernel_size, image_dimensions, X_DIR);
+	cudaDeviceSynchronize();
+	float * temp;
 	temp = dev_cube_wi;
 	dev_cube_wi = dev_cube_wi_out;
 	dev_cube_wi_out = temp;
+	
 
-	convolution <<<1, size >>>(dev_cube_w_out, dev_cube_w, dev_kernel, kernel_size, image_dimensions, Y_DIR);
+	convolution << <grid, block >> >(dev_cube_w_out, dev_cube_w, dev_kernel, kernel_size, image_dimensions, X_DIR);
+	cudaDeviceSynchronize();
 	temp = dev_cube_w;
 	dev_cube_w = dev_cube_w_out;
 	dev_cube_w_out = temp;
+	
+	convolution << <grid, block >> >(dev_cube_wi_out, dev_cube_wi, dev_kernel, kernel_size, image_dimensions, Y_DIR);
+	cudaDeviceSynchronize();
+	temp = dev_cube_wi;
+	dev_cube_wi = dev_cube_wi_out;
+	dev_cube_wi_out = temp;
+	
 
-	convolution << <1, size >> >(dev_cube_wi_out, dev_cube_wi, dev_kernel, kernel_size, image_dimensions, Z_DIR);
+
+	convolution << <grid, block >> >(dev_cube_w_out, dev_cube_w, dev_kernel, kernel_size, image_dimensions, Y_DIR);
+	cudaDeviceSynchronize();
 	temp = dev_cube_w;
 	dev_cube_w = dev_cube_w_out;
 	dev_cube_w_out = temp;
-	convolution << <1, size >> >(dev_cube_w_out, dev_cube_w, dev_kernel, kernel_size, image_dimensions, Z_DIR);
+	
+
+	
+	convolution << <grid, block >> >(dev_cube_wi_out, dev_cube_wi, dev_kernel, kernel_size, image_dimensions, Z_DIR);
+	cudaDeviceSynchronize();
+	
+	temp = dev_cube_wi;
+	dev_cube_wi = dev_cube_wi_out;
+	dev_cube_wi_out = temp;
+	
+
+	convolution << <grid, block >> >(dev_cube_w_out, dev_cube_w, dev_kernel, kernel_size, image_dimensions, Z_DIR);
+	cudaDeviceSynchronize();
 	temp = dev_cube_w;
 	dev_cube_w = dev_cube_w_out;
-	dev_cube_w_out = temp;*/
-
+	dev_cube_w_out = temp;
+	
 	//allocate gpu image
 	float * dev_image, *result_image;
 
@@ -203,12 +268,13 @@ int main(int argc, char **argv)
 
 
 	//Specify a reasonable block size
-	const dim3 block(16, 16);
+	const dim3 block2(16, 16);
 
 	//Calculate grid size to cover the whole image
-	const dim3 grid((image.cols + block.x - 1) / block.x, (image.rows + block.y - 1) / block.y);
+	const dim3 grid2(ceil((image.cols + block2.x - 1) / block2.x), ceil((image.rows + block2.y - 1) / block2.y));
 
-	slicing << < grid, block >> > (dev_image , dev_cube_wi, dev_cube_w, image_dimensions);
+	slicing << < grid2, block2 >> > (dev_image , dev_cube_wi, dev_cube_w, image_dimensions);
+	cudaDeviceSynchronize();
 
 	result_image = (float*)malloc(imsize*sizeof(float));
 	cudaMemcpy(result_image, dev_image, imsize*sizeof(float), cudaMemcpyDeviceToHost);
@@ -232,8 +298,9 @@ int main(int argc, char **argv)
 	//free(kernel);
 
 	cv::namedWindow("Filtered image", cv::WINDOW_AUTOSIZE);// Create a window for display.
-	cv::imshow("Filtered image", output_imag);
-	cv::imwrite("Result.jpg", output_imag * 256);
+
+	cv::imshow("Filtered image", output_imag/256);
+	cv::imwrite("Result.bmp", output_imag);
 	cv::waitKey(0);
 
 
@@ -254,6 +321,6 @@ int main(int argc, char **argv)
 
 void define_kernel(float* output_kernel, float sigma, int size) {
 	for (int i = 0; i < size; i++) {
-		output_kernel[i] = exp(-0.5*pow((size / 2 - i) / sigma, 2));
+		output_kernel[i] = expf(-0.5*powf((size / 2 - i) / sigma, 2));
 	}
 }
