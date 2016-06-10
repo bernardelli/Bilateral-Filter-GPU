@@ -14,6 +14,7 @@
 #define Z_DIR 2
 
 //TODO solve shit with grid/block dimentions access of cube memory
+//http://stackoverflow.com/questions/21971484/calculation-on-gpu-leads-to-driver-error-stopped-responding
 void define_kernel(float* output_kernel, float sigma, int size);
 
 __global__ void slicing(float *dev_image, const float*dev_cube_wi, const float*dev_cube_w, const dim3 imsize)
@@ -46,15 +47,15 @@ __global__ void convolution(float *output, const float *input, const float* kern
 	unsigned int iy = blockDim.y*blockIdx.y + threadIdx.y;
 	unsigned int i = ix + iy*blockDim.x*gridDim.x;
 	//unsigned int i = blockDim.x*blockIdx.x + threadIdx.x;
-	int imsize_x = imsize.x;
-	int imsize_y = imsize.y;
-	int imsize_z = imsize.z;
+	unsigned int imsize_x = imsize.x;
+	unsigned int imsize_y = imsize.y;
+	unsigned int imsize_z = imsize.z;
 	unsigned int im_size = imsize_x*imsize_y*imsize_z;
 	//printf("i = %d\n", i);
 	//idx = x_i + imsize_x*y_i + imsize_x*imsize_y*z_i
-	unsigned int z_i = i / (imsize_x*imsize_y);
-	unsigned int y_i = (i - z_i*(imsize_x*imsize_y)) / imsize_x;
-	unsigned int x_i = i - y_i*imsize_x - z_i*(imsize_x*imsize_y);
+	unsigned int z_i = i / (unsigned int) (imsize_x*imsize_y);
+	unsigned int y_i = (i - z_i*(unsigned int)(imsize_x*imsize_y)) / imsize_x;
+	unsigned int x_i = i - y_i*imsize_x - z_i*(unsigned int)(imsize_x*imsize_y);
 	
 	
 	double result = 0.0;
@@ -64,7 +65,7 @@ __global__ void convolution(float *output, const float *input, const float* kern
 		if (dir == X_DIR) {
 			int x_input = k_offset - k + x_i;
 			if (x_input >= 0 && x_input < imsize_x) {
-				idx = x_input + imsize_x*y_i + imsize_x*imsize_y*z_i;
+				idx = (unsigned int)x_input + imsize_x*y_i + imsize_x*imsize_y*z_i;
 				if (idx < im_size)
 					result += input[idx]*kernel[k];
 			}
@@ -75,7 +76,7 @@ __global__ void convolution(float *output, const float *input, const float* kern
 			int y_input = k_offset - k + y_i;
 
 			if (y_input >= 0 && y_input < imsize_y) {
-				idx = x_i + imsize_x*y_input + imsize_x*imsize_y*z_i;
+				idx = x_i + imsize_x*(unsigned int)y_input + imsize_x*imsize_y*z_i;
 				if (idx < im_size)
 					result += input[idx] * kernel[k];
 			}
@@ -86,7 +87,7 @@ __global__ void convolution(float *output, const float *input, const float* kern
 			int z_input = k_offset - k + z_i;
 			//printf("z_input %f\n", z_input);
 			if (z_input >= 0 && z_input < imsize_z) {
-				idx = x_i + imsize_x*y_i + imsize_x*imsize_y*z_input;
+				idx = x_i + imsize_x*y_i + imsize_x*imsize_y*(unsigned int) z_input;
 				if (idx < im_size)
 					result += input[idx] * kernel[k];
 			}
@@ -99,7 +100,7 @@ __global__ void convolution(float *output, const float *input, const float* kern
 	}
 	idx = x_i + imsize_x*y_i + imsize_x*imsize_y*z_i;
 	if (idx < im_size)
-		output[idx] = result / ksize;
+		output[idx] = result;
 }
 
 
@@ -115,7 +116,7 @@ int main(int argc, char **argv)
 		printf("Device %d has compute capability %d.%d and concurrentKernels = %d.\n",
 			device, deviceProp.major, deviceProp.minor, deviceProp.concurrentKernels);
 	}
-
+	cudaDeviceReset();
 
 	//Load Image
 	
@@ -128,9 +129,9 @@ int main(int argc, char **argv)
 	//Set up cubes
 	int size = image.rows*image.cols * 256;
 	float *cube_wi, *cube_w;
-	int kernel_size = 33;
+	int kernel_size = 57;
 	float *kernel = (float*)malloc(kernel_size*sizeof(float));
-	define_kernel(kernel, 11.5, kernel_size);
+	define_kernel(kernel, 25.5, kernel_size);
 
 
 	float *dev_cube_wi, *dev_cube_w, *dev_cube_wi_out, *dev_cube_w_out, *dev_kernel;
@@ -208,7 +209,7 @@ int main(int argc, char **argv)
 
 	//Calculate grid size to cover the whole image
 	//int grid_n = ceil(sqrt(size) / (block.y));
-	int grin = 180;//256
+	int grin = 256;//256 made it work with 231
 	const dim3 grid(grin, grin); //number of blocks
 	//int block = 1024;
 	//int grid = size / block;
@@ -268,10 +269,10 @@ int main(int argc, char **argv)
 
 
 	//Specify a reasonable block size
-	const dim3 block2(16, 16);
+	const dim3 block2(32, 32);
 
 	//Calculate grid size to cover the whole image
-	const dim3 grid2(ceil((image.cols + block2.x - 1) / block2.x), ceil((image.rows + block2.y - 1) / block2.y));
+	const dim3 grid2(((image.cols + block2.x - 1) / block2.x), ((image.rows + block2.y - 1) / block2.y));
 
 	slicing << < grid2, block2 >> > (dev_image , dev_cube_wi, dev_cube_w, image_dimensions);
 	cudaDeviceSynchronize();
@@ -283,19 +284,24 @@ int main(int argc, char **argv)
 	//cv::gpu::GpuMat dev_image(image.rows, image.cols, CV_8U, dev_image);
 
 	cv::Mat output_imag(image.rows, image.cols, CV_32F, result_image);
+
+
+
+	
+	//std::cout << output_imag << std::endl;
 	//dev_output_image.download(output_imag);
 
-	//cudaFree(dev_cube_wi_out);
-	//cudaFree(dev_cube_wi);
+	cudaFree(dev_cube_wi_out);
+	cudaFree(dev_cube_wi);
 
-	//cudaFree(dev_cube_w_out);
-	//cudaFree(dev_cube_w);
-	//cudaFree(dev_image);
+	cudaFree(dev_cube_w_out);
+	cudaFree(dev_cube_w);
+	cudaFree(dev_image);
 
-//	cudaFree(dev_kernel);
-//	free(cube_w);
-	//free(cube_wi);
-	//free(kernel);
+	cudaFree(dev_kernel);
+	free(cube_w);
+	free(cube_wi);
+	free(kernel);
 
 	cv::namedWindow("Filtered image", cv::WINDOW_AUTOSIZE);// Create a window for display.
 
