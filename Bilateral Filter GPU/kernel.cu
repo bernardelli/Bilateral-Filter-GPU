@@ -1,20 +1,11 @@
 
-#include "cuda_runtime.h"
-#include "device_launch_parameters.h"
-
-#include <stdio.h>
-#include <opencv2/core/core.hpp>
-#include <opencv2/highgui/highgui.hpp>
-#include <opencv2/gpu/gpu.hpp>
-
-#include "includes.h"
+#include "stdafx.h"
 
 #define X_DIR 0
 #define Y_DIR 1
 #define Z_DIR 2
 
-//TODO solve shit with grid/block dimentions access of cube memory
-//http://stackoverflow.com/questions/21971484/calculation-on-gpu-leads-to-driver-error-stopped-responding
+
 void define_kernel(float* output_kernel, float sigma, int size);
 
 __global__ void slicing(float *dev_image, const float*dev_cube_wi, const float*dev_cube_w, const dim3 imsize)
