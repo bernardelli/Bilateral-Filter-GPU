@@ -39,7 +39,7 @@ int main(int argc, char **argv)
 	//Set up cubes
 	size = image.rows*image.cols * 256;
 	kernel_size = 57;
-	*kernel = (float*)malloc(kernel_size*sizeof(float));
+	kernel = (float*)malloc(kernel_size*sizeof(float));
 	define_kernel(kernel, 25.5, kernel_size);
 
 	
@@ -142,14 +142,12 @@ int main(int argc, char **argv)
 	*** cudaDeviceReset must be called before exiting in order for profiling and  ***
     *** tracing tools such as Nsight and Visual Profiler to show complete traces. ***
 	********************************************************************************/
-    // cudaDeviceReset must be called before exiting in order for profiling and
-    // tracing tools such as Nsight and Visual Profiler to show complete traces.
     cudaStatus = cudaDeviceReset();
     if (cudaStatus != cudaSuccess) {
         fprintf(stderr, "cudaDeviceReset failed!");
         return 1;
     }
-
+	
     return 0;
 }
 
