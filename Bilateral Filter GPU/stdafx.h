@@ -5,6 +5,10 @@
 //#include <helper_functions.h>  // CUDA SDK Helper functions
   
 #include "cuda_runtime.h"
+
+
+
+
 #include "device_launch_parameters.h"
 
 #include <stdio.h>
