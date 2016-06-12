@@ -1,4 +1,10 @@
-#include <include_file.h>
+#include "include_file.h"
+
+
+#include "slicing.h"
+#include "convolution.h"
+#include "little_cuda_functions.h"
+
 
 int main(int argc, char **argv)
 {

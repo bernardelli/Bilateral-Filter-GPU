@@ -1,3 +1,5 @@
+#include "little_cuda_functions.h"
+
 void checkingDevices()
 {
 	int deviceCount;

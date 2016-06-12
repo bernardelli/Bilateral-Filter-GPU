@@ -2,6 +2,9 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <CudaCompile Include="kernel.cu" />
+    <CudaCompile Include="convolution.cu" />
+    <CudaCompile Include="little_cuda_functions.cu" />
+    <CudaCompile Include="slicing.cu" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Ressources">
@@ -18,5 +21,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
+    <ClInclude Include="include_file.h" />
+    <ClInclude Include="little_cuda_functions.h" />
+    <ClInclude Include="slicing.h" />
+    <ClInclude Include="convolution.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="main.cpp" />
   </ItemGroup>
 </Project>

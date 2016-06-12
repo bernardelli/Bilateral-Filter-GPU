@@ -1,7 +1,9 @@
 #ifndef CONVOLUTION_H
 #define CONVOLUTION_H
 
-__global__ void convolution(float *output, const float *input, const float* kernel, const int ksize,  const dim3 imsize, const int dir);
+#include "include_file.h"
+
+__global__ void convolution(float *, const float *, const float* , const int ,  const dim3 , const int );
 
 void callingConvolution(cv::Mat image, float *dev_cube_wi_out, float *dev_cube_w_out, float *dev_cube_wi, int dev_kernel, int kernel_size);
 

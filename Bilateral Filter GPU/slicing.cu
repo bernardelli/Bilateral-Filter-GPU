@@ -1,3 +1,5 @@
+#include "slicing.h"
+
 __global__ void slicing( float *dev_image, const float *dev_cube_wi, const float *dev_cube_w, const dim3 imsize)
 {
 

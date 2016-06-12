@@ -32,6 +32,7 @@ __global__ void slicing(float *dev_image, const float*dev_cube_wi, const float*d
 		//printf("out of bounds\n");
 
 }
+
 __global__ void convolution(float *output, const float *input, const float* kernel, const int ksize,  const dim3 imsize, const int dir)
 {	
 	unsigned int ix = blockDim.x*blockIdx.x + threadIdx.x;

@@ -156,9 +156,16 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <CudaCompile Include="convolution.cu" />
     <CudaCompile Include="kernel.cu" />
+    <CudaCompile Include="little_cuda_functions.cu" />
+    <CudaCompile Include="slicing.cu" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="convolution.h" />
+    <ClInclude Include="include_file.h" />
+    <ClInclude Include="little_cuda_functions.h" />
+    <ClInclude Include="slicing.h" />
     <ClInclude Include="stdafx.h">
       <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DeploymentContent>
     </ClInclude>
@@ -166,6 +173,9 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
   <ItemGroup>
     <Image Include="lena.bmp" />
     <Image Include="Result.bmp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="main.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

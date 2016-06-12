@@ -12,9 +12,6 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/gpu/gpu.hpp>
 
-#include "slicing.h"
-#include "convolution.h"
-#include "little_cuda_functions.h"
 
 #define X_DIR 0
 #define Y_DIR 1
