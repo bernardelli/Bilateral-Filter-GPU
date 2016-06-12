@@ -19,9 +19,9 @@ void checkingDevices()
 	cudaDeviceReset();
 }
 
-cudaError_t allocateGpuMemory(char **ptr, int size)
+cudaError_t allocateGpuMemory(float**ptr, int size)
 {
-	cudaError_t cudaStatus = cudaMalloc((void**)&ptr, size * sizeof(float));
+	cudaError_t cudaStatus = cudaMalloc((float**)&ptr, size * sizeof(float));
 	return cudaStatus;
 }
 

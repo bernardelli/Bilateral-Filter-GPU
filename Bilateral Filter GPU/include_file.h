@@ -1,3 +1,7 @@
+#ifndef INCLUDE_FILE_H
+#define INCLUDE_FILE_H
+
+
 #include <math.h>
 #include <iostream>
 
@@ -18,3 +22,5 @@
 #define Z_DIR 2
 
 void define_kernel(float* output_kernel, float sigma, int size);
+
+#endif

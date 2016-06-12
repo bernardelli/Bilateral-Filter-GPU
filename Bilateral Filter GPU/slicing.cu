@@ -44,4 +44,6 @@ float* callingSlicing( cv::Mat image, float *dev_cube_wi, float *dev_cube_w)
 
 	result_image = (float*)malloc(imsize*sizeof(float));
 	cudaMemcpy(result_image, dev_image, imsize*sizeof(float), cudaMemcpyDeviceToHost);
+	cudaFree(dev_image);
+	return result_image;
 }

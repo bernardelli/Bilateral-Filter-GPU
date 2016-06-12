@@ -42,7 +42,6 @@ int main(int argc, char **argv)
 	/********************************************************************************
 	*** define kernel                                                             ***
 	********************************************************************************/
-	//Set up cubes
 	size = image.rows*image.cols * 256;
 	kernel_size = 57;
 	kernel = (float*)malloc(kernel_size*sizeof(float));
@@ -110,7 +109,7 @@ int main(int argc, char **argv)
 	/********************************************************************************
 	*** start concolution on gpu                                                  ***
 	********************************************************************************/
-	callingConvolution(image, dev_cube_wi_out, dev_cube_w_out, dev_cube_wi, dev_kernel, kernel_size);
+	callingConvolution(image, dev_cube_wi_out, dev_cube_w_out, dev_cube_wi, dev_cube_w, dev_kernel, kernel_size);
 	
 	
 	/********************************************************************************
@@ -126,7 +125,6 @@ int main(int argc, char **argv)
 	cudaFree(dev_cube_wi);
 	cudaFree(dev_cube_w_out);
 	cudaFree(dev_cube_w);
-	cudaFree(dev_image);
 	cudaFree(dev_kernel);
 	free(cube_w);
 	free(cube_wi);

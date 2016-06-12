@@ -1,6 +1,6 @@
 #include "convolution.h"
 
-__global__ void convolution(float *output, const float *input, const float* kernel, const int ksize, const dim3 imsize, const int dir)
+__global__ void convolution(float *output, const float *input, const float *kernel, const int ksize, const dim3 imsize, const int dir)
 {	
 	unsigned int ix = blockDim.x*blockIdx.x + threadIdx.x;
 	unsigned int iy = blockDim.y*blockIdx.y + threadIdx.y;
@@ -60,7 +60,7 @@ __global__ void convolution(float *output, const float *input, const float* kern
 		output[idx] = result;
 }
 
-void callingConvolution(cv::Mat image, float *dev_cube_wi_out, float *dev_cube_w_out, float *dev_cube_wi, int dev_kernel, int kernel_size)
+void callingConvolution(cv::Mat image, float *dev_cube_wi_out, float *dev_cube_w_out, float *dev_cube_wi, float *dev_cube_w, float *dev_kernel, int kernel_size)
 {
 	const dim3 block(32, 32); //threads per block 32 32
 
@@ -69,7 +69,13 @@ void callingConvolution(cv::Mat image, float *dev_cube_wi_out, float *dev_cube_w
 	
 	dim3  image_dimensions = dim3(image.rows, image.cols, 256);
 	
-	convolution <<< grid, block >>>(dev_cube_wi_out, dev_cube_wi, dev_kernel, kernel_size, image_dimensions, X_DIR);
+	convolution <<< grid, block >>>
+		(dev_cube_wi_out, 
+		dev_cube_wi, 
+		dev_kernel, 
+		kernel_size, 
+		image_dimensions, 
+		X_DIR);
 	cudaDeviceSynchronize();
 	swap(dev_cube_wi, dev_cube_wi_out);
 
@@ -95,8 +101,8 @@ void callingConvolution(cv::Mat image, float *dev_cube_wi_out, float *dev_cube_w
 	
 }
 
-void swap(int*& a, int*& b){
-    int* c = a;
+void swap(float*& a, float*& b){
+    float* c = a;
     a = b;
     b = c;
 }

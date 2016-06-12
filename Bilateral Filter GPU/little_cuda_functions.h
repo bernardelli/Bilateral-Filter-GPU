@@ -5,7 +5,7 @@
 
 void checkingDevices();
 
-cudaError_t allocateGpuMemory(char **ptr, int size);
+cudaError_t allocateGpuMemory(float **ptr, int size);
 
 cudaError_t copyToGpuMem(float *a, float *b, int size);
 
