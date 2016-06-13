@@ -1,5 +1,10 @@
 #include "little_cuda_functions.h"
 
+
+/********************************************************************************
+*** checking if CUDA is installed and printing out the compute capability and ***
+*** the concurrent kernels of each device                                     ***
+********************************************************************************/
 void checkingDevices()
 {
 	int deviceCount;
@@ -19,12 +24,31 @@ void checkingDevices()
 	cudaDeviceReset();
 }
 
-cudaError_t allocateGpuMemory(float**ptr, int size)
+
+/********************************************************************************
+*** getting the size of the malloced space and returning a pointer of that    ***
+*** malloced space                                                            ***
+********************************************************************************/
+float* allocateGpuMemory(int size)
 {
-	cudaError_t cudaStatus = cudaMalloc((float**)&ptr, size * sizeof(float));
-	return cudaStatus;
+
+	float* p;
+	size *= sizeof(float);
+	cudaError_t err = cudaSuccess;
+	err = cudaMalloc((void **)&p, size);
+
+	if (err != cudaSuccess) {
+		fprintf(stderr, "cudaMalloc failed! Error code: %s\n", cudaGetErrorString);
+		return NULL;
+	}
+
+	return p;
 }
 
+
+/********************************************************************************
+*** copy memory to the gpu memory                                             ***
+********************************************************************************/
 cudaError_t copyToGpuMem(float *a, float *b, int size)
 {
 	cudaError_t cudaStatus = cudaMemcpy(a, b, size * sizeof(float), cudaMemcpyHostToDevice);

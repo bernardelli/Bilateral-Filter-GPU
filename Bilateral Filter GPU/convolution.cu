@@ -1,7 +1,12 @@
 #include "convolution.h"
 
+
+/********************************************************************************
+*** doing the convolution with many threads on the gpu                        ***
+********************************************************************************/
 __global__ void convolution(float *output, const float *input, const float *kernel, const int ksize, const dim3 imsize, const int dir)
 {	
+	
 	unsigned int ix = blockDim.x*blockIdx.x + threadIdx.x;
 	unsigned int iy = blockDim.y*blockIdx.y + threadIdx.y;
 	unsigned int i = ix + iy*blockDim.x*gridDim.x;
@@ -20,16 +25,18 @@ __global__ void convolution(float *output, const float *input, const float *kern
 	double result = 0.0;
 	unsigned int idx = 0;
 	unsigned int k_offset = (ksize / 2);
-	for (int k = 0; k < ksize; k++) {
-		if (dir == X_DIR) {
+	if (dir == X_DIR) {
+		for (int k = 0; k < ksize; k++) {
 			int x_input = k_offset - k + x_i;
 			if (x_input >= 0 && x_input < imsize_x) {
 				idx = (unsigned int)x_input + imsize_x*y_i + imsize_x*imsize_y*z_i;
 				if (idx < im_size)
-					result += input[idx]*kernel[k];
+					result += input[idx] * kernel[k];
 			}
 		}
-		else if (dir == Y_DIR) {
+	}
+	else if (dir == Y_DIR) {
+		for (int k = 0; k < ksize; k++) {
 			int y_input = k_offset - k + y_i;
 
 			if (y_input >= 0 && y_input < imsize_y) {
@@ -37,24 +44,23 @@ __global__ void convolution(float *output, const float *input, const float *kern
 				if (idx < im_size)
 					result += input[idx] * kernel[k];
 			}
-			//else
-				//printf("out of bounds\n");
 		}
-		else if (dir == Z_DIR) {
+	}
+	else if (dir == Z_DIR) {
+		for (int k = 0; k < ksize; k++) {
 			int z_input = k_offset - k + z_i;
-			//printf("z_input %f\n", z_input);
 			if (z_input >= 0 && z_input < imsize_z) {
-				idx = x_i + imsize_x*y_i + imsize_x*imsize_y*(unsigned int) z_input;
+				idx = x_i + imsize_x*y_i + imsize_x*imsize_y*(unsigned int)z_input;
 				if (idx < im_size)
 					result += input[idx] * kernel[k];
 			}
-			//else
-				//printf("out of bounds\n");
 		}
-		else
-			printf("All wrong");
-		
+	} 
+	else {
+		printf("All wrong");
 	}
+	
+
 	idx = x_i + imsize_x*y_i + imsize_x*imsize_y*z_i;
 	if (idx < im_size)
 		output[idx] = result;
@@ -69,17 +75,11 @@ void callingConvolution(cv::Mat image, float *dev_cube_wi_out, float *dev_cube_w
 	
 	dim3  image_dimensions = dim3(image.rows, image.cols, 256);
 	
-	convolution <<< grid, block >>>
-		(dev_cube_wi_out, 
-		dev_cube_wi, 
-		dev_kernel, 
-		kernel_size, 
-		image_dimensions, 
-		X_DIR);
+	convolution <<< grid, block >>>(dev_cube_wi_out, dev_cube_wi, dev_kernel, kernel_size, image_dimensions, X_DIR);
 	cudaDeviceSynchronize();
 	swap(dev_cube_wi, dev_cube_wi_out);
 
-	convolution <<< grid, block >>>(dev_cube_w_out, dev_cube_w, dev_kernel, kernel_size, image_dimensions, X_DIR);
+	convolution <<< grid, block >>>(dev_cube_w_out,  dev_cube_w,  dev_kernel, kernel_size, image_dimensions, X_DIR);
 	cudaDeviceSynchronize();
 	swap(dev_cube_w, dev_cube_w_out);
 		
@@ -87,7 +87,7 @@ void callingConvolution(cv::Mat image, float *dev_cube_wi_out, float *dev_cube_w
 	cudaDeviceSynchronize();
 	swap(dev_cube_wi, dev_cube_wi_out);
 	
-	convolution <<< grid, block >>>(dev_cube_w_out, dev_cube_w, dev_kernel, kernel_size, image_dimensions, Y_DIR);
+	convolution <<< grid, block >>>(dev_cube_w_out,  dev_cube_w, dev_kernel,  kernel_size, image_dimensions, Y_DIR);
 	cudaDeviceSynchronize();
 	swap(dev_cube_w, dev_cube_w_out);
 	

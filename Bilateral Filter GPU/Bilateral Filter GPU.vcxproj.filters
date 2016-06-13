@@ -4,6 +4,7 @@
     <CudaCompile Include="convolution.cu" />
     <CudaCompile Include="little_cuda_functions.cu" />
     <CudaCompile Include="slicing.cu" />
+    <CudaCompile Include="cubefilling.cu" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Ressources">
@@ -24,6 +25,7 @@
     <ClInclude Include="little_cuda_functions.h" />
     <ClInclude Include="slicing.h" />
     <ClInclude Include="convolution.h" />
+    <ClInclude Include="cubefilling.cuh" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
