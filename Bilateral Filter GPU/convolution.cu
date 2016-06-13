@@ -77,32 +77,32 @@ void callingConvolution(cv::Mat image, float *dev_cube_wi_out, float *dev_cube_w
 		image_dimensions, 
 		X_DIR);
 	cudaDeviceSynchronize();
-	swap(dev_cube_wi, dev_cube_wi_out);
+	swap(&dev_cube_wi, &dev_cube_wi_out);
 
 	convolution <<< grid, block >>>(dev_cube_w_out, dev_cube_w, dev_kernel, kernel_size, image_dimensions, X_DIR);
 	cudaDeviceSynchronize();
-	swap(dev_cube_w, dev_cube_w_out);
+	swap(&dev_cube_w, &dev_cube_w_out);
 		
 	convolution <<< grid, block >>>(dev_cube_wi_out, dev_cube_wi, dev_kernel, kernel_size, image_dimensions, Y_DIR);
 	cudaDeviceSynchronize();
-	swap(dev_cube_wi, dev_cube_wi_out);
+	swap(&dev_cube_wi, &dev_cube_wi_out);
 	
 	convolution <<< grid, block >>>(dev_cube_w_out, dev_cube_w, dev_kernel, kernel_size, image_dimensions, Y_DIR);
 	cudaDeviceSynchronize();
-	swap(dev_cube_w, dev_cube_w_out);
+	swap(&dev_cube_w, &dev_cube_w_out);
 	
 	convolution <<< grid, block >>>(dev_cube_wi_out, dev_cube_wi, dev_kernel, kernel_size, image_dimensions, Z_DIR);
 	cudaDeviceSynchronize();
-	swap(dev_cube_wi, dev_cube_wi_out);
+	swap(&dev_cube_wi, &dev_cube_wi_out);
 	
 	convolution <<< grid, block >>>(dev_cube_w_out, dev_cube_w, dev_kernel, kernel_size, image_dimensions, Z_DIR);
 	cudaDeviceSynchronize();
-	swap(dev_cube_w, dev_cube_w_out);
+	swap(&dev_cube_w, &dev_cube_w_out);
 	
 }
 
-void swap(float*& a, float*& b){
-    float* c = a;
+void swap(float** a, float** b){
+    float** c = a;
     a = b;
     b = c;
 }

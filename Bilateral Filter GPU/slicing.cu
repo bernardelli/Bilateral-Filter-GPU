@@ -23,27 +23,28 @@ __global__ void slicing( float *dev_image, const float *dev_cube_wi, const float
 
 }
 
-float* callingSlicing( cv::Mat image, float *dev_cube_wi, float *dev_cube_w)
+void callingSlicing(float* result_image, float* dev_image, const float *dev_cube_wi, const float *dev_cube_w, const dim3 imsize)
 {
+	/*
 	float *dev_image, *result_image; 
 	image.convertTo(image, CV_32F);
 	int imsize = image.rows*image.cols;
 	cudaMalloc(&dev_image, imsize*sizeof(float));
-	cudaMemcpy(dev_image, image.ptr(), imsize*sizeof(float), cudaMemcpyHostToDevice);
+	cudaMemcpy(dev_image, image.ptr(), imsize*sizeof(float), cudaMemcpyHostToDevice);*/
 	
 	//Specify a reasonable block size
 	const dim3 block2(32, 32);
 
 	//Calculate grid size to cover the whole image
-	const dim3 grid2(((image.cols + block2.x - 1) / block2.x), ((image.rows + block2.y - 1) / block2.y));
+	const dim3 grid2(((imsize.x + block2.x - 1) / block2.x), ((imsize.y + block2.y - 1) / block2.y));
 	
-	dim3  image_dimensions = dim3(image.rows, image.cols, 256);
+
 	
-	slicing <<< grid2, block2 >>> (dev_image , dev_cube_wi, dev_cube_w, image_dimensions);
+	slicing <<< grid2, block2 >>> (dev_image, dev_cube_wi, dev_cube_w, imsize);
 	cudaDeviceSynchronize();
 
-	result_image = (float*)malloc(imsize*sizeof(float));
-	cudaMemcpy(result_image, dev_image, imsize*sizeof(float), cudaMemcpyDeviceToHost);
-	cudaFree(dev_image);
-	return result_image;
+	
+	cudaMemcpy(result_image, dev_image, imsize.x*imsize.y*sizeof(float), cudaMemcpyDeviceToHost);
+	
+
 }
