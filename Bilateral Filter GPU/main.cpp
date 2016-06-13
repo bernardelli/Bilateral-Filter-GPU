@@ -41,7 +41,7 @@ int main(int argc, char **argv)
 	
 	image_size = image.rows*image.cols;
 	size = image_size * 256;
-	dim3 dimentions = dim3(image.rows, image.cols, 256);
+	dim3 dimensions = dim3(image.rows, image.cols, 256);
 
 	cv::namedWindow("Original image", cv::WINDOW_AUTOSIZE);
 	cv::imshow("Original image", image);
@@ -90,8 +90,8 @@ int main(int argc, char **argv)
 	********************************************************************************/
 	//cudaStatus = copyToGpuMem(dev_cube_wi,cube_wi, size);
 	//cudaStatus = copyToGpuMem(dev_cube_w,cube_w, size);
-	cudaStatus = copyToGpuMem(dev_kernel,kernel, kernel_size);
-	cudaStatus = cudaMemcpy(dev_image, image.ptr(), image_size*sizeof(float), cudaMemcpyHostToDevice);////copyToGpuMem(dev_image, image.ptr<float>(), size); //
+	cudaStatus = copyToGpuMem(dev_kernel, kernel, kernel_size);
+	cudaStatus = cudaMemcpy(dev_image, image.ptr(), image_size*sizeof(float), cudaMemcpyHostToDevice);////copyToGpuMem(dev_image,(float*) image.ptr(), size); //only works with raw function!
 	if (cudaStatus != cudaSuccess) {
 		fprintf(stderr, "cudaMemcpy failed!");
 	}
@@ -101,20 +101,20 @@ int main(int argc, char **argv)
 	*** setting up the cubes and filling them                                     ***
 	********************************************************************************/
 
-	callingCubefilling(dev_image, dev_cube_wi, dev_cube_w, dimentions);
+	callingCubefilling(dev_image, dev_cube_wi, dev_cube_w, dimensions);
 
 	
 	/********************************************************************************
 	*** start concolution on gpu                                                  ***
 	********************************************************************************/
-	callingConvolution(image, dev_cube_wi_out, dev_cube_w_out, dev_cube_wi, dev_cube_w, dev_kernel, kernel_size);
+	callingConvolution(dev_cube_wi_out, dev_cube_w_out, dev_cube_wi, dev_cube_w, dev_kernel, kernel_size, dimensions);
 	
 	
 	/********************************************************************************
 	*** start slicing on gpu                                                      ***
 	********************************************************************************/
 	result_image = (float*)malloc(image_size*sizeof(float));
-	callingSlicing(result_image, dev_image, dev_cube_wi, dev_cube_w, dimentions);
+	callingSlicing(result_image, dev_image, dev_cube_wi, dev_cube_w, dimensions);
 	cv::Mat output_imag(image.rows, image.cols, CV_32F, result_image);
 	
 	/********************************************************************************
@@ -127,7 +127,7 @@ int main(int argc, char **argv)
 	cudaFree(dev_kernel);
 	cudaFree(dev_image);
 	free(kernel);
-	free(result_image);
+	
 	
 	
 	/********************************************************************************
@@ -139,7 +139,7 @@ int main(int argc, char **argv)
 	cv::imshow("Filtered image", output_imag/256);
 	cv::imwrite("Result.bmp", output_imag);
 	cv::waitKey(0);
-	
+	free(result_image); //needs to be freed after using output_imag
 	
 	/********************************************************************************
 	*** cudaDeviceReset must be called before exiting in order for profiling and  ***

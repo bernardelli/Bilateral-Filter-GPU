@@ -60,14 +60,13 @@ __global__ void convolution(float *output, const float *input, const float *kern
 		output[idx] = result;
 }
 
-void callingConvolution(cv::Mat image, float *dev_cube_wi_out, float *dev_cube_w_out, float *dev_cube_wi, float *dev_cube_w, float *dev_kernel, int kernel_size)
+void callingConvolution(float *dev_cube_wi_out, float *dev_cube_w_out, float *dev_cube_wi, float *dev_cube_w, float *dev_kernel, int kernel_size, dim3  image_dimensions)
 {
 	const dim3 block(32, 32); //threads per block 32 32
 
 	int grin = 256;
 	const dim3 grid(grin, grin);
 	
-	dim3  image_dimensions = dim3(image.rows, image.cols, 256);
 	
 	convolution <<< grid, block >>>
 		(dev_cube_wi_out, 
@@ -102,7 +101,7 @@ void callingConvolution(cv::Mat image, float *dev_cube_wi_out, float *dev_cube_w
 }
 
 void swap(float** a, float** b){
-    float** c = a;
-    a = b;
-    b = c;
+	float* c = *a;
+    *a = *b;
+    *b = c;
 }
