@@ -21,7 +21,7 @@ void checkingDevices()
 
 cudaError_t allocateGpuMemory(float**ptr, int size)
 {
-	cudaError_t cudaStatus = cudaMalloc((float**)&ptr, size * sizeof(float));
+	cudaError_t cudaStatus = cudaMalloc((float**)ptr, size * sizeof(float));
 	return cudaStatus;
 }
 
