@@ -114,7 +114,7 @@ int main(int argc, char **argv)
 	*** start slicing on gpu                                                      ***
 	********************************************************************************/
 	result_image = (float*)malloc(image_size*sizeof(float));
-	callingSlicing(result_image, dev_image, dev_cube_wi, dev_cube_w, dimensions);
+	callingSlicing(result_image, dev_image, dev_cube_wi_out, dev_cube_w_out, dimensions);
 	cv::Mat output_imag(image.rows, image.cols, CV_32F, result_image);
 	
 	/********************************************************************************
