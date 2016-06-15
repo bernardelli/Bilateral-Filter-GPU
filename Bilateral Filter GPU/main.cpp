@@ -14,9 +14,9 @@ int main(int argc, char **argv)
 	*** initialization of variables                                               ***
 	********************************************************************************/
 	cv::Mat image;
-	int size, kernel_size, image_size;
-	float *kernel, *dev_cube_wi, *dev_cube_w, *dev_cube_wi_out, 
-	      *dev_cube_w_out, *dev_kernel, *dev_image, *result_image;
+	int size, kernel_eps_size, kernel_xy_size, image_size;
+	float *kernel_eps, *kernel_xy, *dev_cube_wi, *dev_cube_w, *dev_cube_wi_out, 
+		*dev_cube_w_out, *dev_kernel_xy, *dev_kernel_eps, *dev_image, *result_image;
 	cudaError_t cudaStatus;
 
 
@@ -50,12 +50,15 @@ int main(int argc, char **argv)
 	/********************************************************************************
 	*** define kernel                                                             ***
 	********************************************************************************/
-	
-	kernel_size = 57;
-	kernel = (float*)malloc(kernel_size*sizeof(float));
-	define_kernel(kernel, 25.5, kernel_size);
+	float sigma_xy = 2.5;
+	kernel_xy_size = 7;
+	kernel_xy = (float*)malloc(kernel_xy_size*sizeof(float));
+	define_kernel(kernel_xy, sigma_xy, kernel_xy_size);
 
-	
+	float sigma_eps = 25.5;
+	kernel_eps_size = 57;
+	kernel_eps = (float*)malloc(kernel_eps_size*sizeof(float));
+	define_kernel(kernel_eps, sigma_eps, kernel_eps_size);
 	
 	
 	/********************************************************************************
@@ -74,7 +77,8 @@ int main(int argc, char **argv)
 	cudaStatus = allocateGpuMemory(&dev_cube_w, size);
 	cudaStatus = allocateGpuMemory(&dev_cube_wi_out, size);
 	cudaStatus = allocateGpuMemory(&dev_cube_w_out, size);
-	cudaStatus = allocateGpuMemory(&dev_kernel, kernel_size);
+	cudaStatus = allocateGpuMemory(&dev_kernel_xy, kernel_xy_size);
+	cudaStatus = allocateGpuMemory(&dev_kernel_eps, kernel_eps_size);
 	cudaStatus = allocateGpuMemory(&dev_image, image_size);
 	
 	if (cudaStatus != cudaSuccess) {
@@ -90,7 +94,8 @@ int main(int argc, char **argv)
 	********************************************************************************/
 	//cudaStatus = copyToGpuMem(dev_cube_wi,cube_wi, size);
 	//cudaStatus = copyToGpuMem(dev_cube_w,cube_w, size);
-	cudaStatus = copyToGpuMem(dev_kernel, kernel, kernel_size);
+	cudaStatus = copyToGpuMem(dev_kernel_xy, kernel_xy, kernel_xy_size);
+	cudaStatus = copyToGpuMem(dev_kernel_eps, kernel_eps, kernel_eps_size);
 	cudaStatus = cudaMemcpy(dev_image, image.ptr(), image_size*sizeof(float), cudaMemcpyHostToDevice);////copyToGpuMem(dev_image,(float*) image.ptr(), size); //only works with raw function!
 	if (cudaStatus != cudaSuccess) {
 		fprintf(stderr, "cudaMemcpy failed!");
@@ -100,14 +105,14 @@ int main(int argc, char **argv)
 	/********************************************************************************
 	*** setting up the cubes and filling them                                     ***
 	********************************************************************************/
-
+	//maybe use cudaPitchedPtr for cubes
 	callingCubefilling(dev_image, dev_cube_wi, dev_cube_w, dimensions);
 
 	
 	/********************************************************************************
 	*** start concolution on gpu                                                  ***
 	********************************************************************************/
-	callingConvolution(dev_cube_wi_out, dev_cube_w_out, dev_cube_wi, dev_cube_w, dev_kernel, kernel_size, dimensions);
+	callingConvolution(dev_cube_wi_out, dev_cube_w_out, dev_cube_wi, dev_cube_w, dev_kernel_xy, kernel_xy_size, dev_kernel_eps, kernel_eps_size, dimensions);
 	
 	
 	/********************************************************************************
@@ -124,9 +129,11 @@ int main(int argc, char **argv)
 	cudaFree(dev_cube_wi);
 	cudaFree(dev_cube_w_out);
 	cudaFree(dev_cube_w);
-	cudaFree(dev_kernel);
+	cudaFree(dev_kernel_xy);
+	cudaFree(dev_kernel_eps);
 	cudaFree(dev_image);
-	free(kernel);
+	free(kernel_xy);
+	free(kernel_eps);
 	
 	
 	

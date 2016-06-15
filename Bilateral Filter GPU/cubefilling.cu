@@ -35,7 +35,8 @@ void callingCubefilling(const float* dev_image, float *dev_cube_wi, float *dev_c
 	dim3 dimGrid((image_size.x + dimBlock.x - 1) / dimBlock.x,
 		(image_size.y + dimBlock.y - 1) / dimBlock.y);
 
-
+	//cudaMemset(dev_cube_wi, 0, image_size.x*image_size.y*image_size.z*sizeof(float)); //seems to be useless
+	//cudaMemset(dev_cube_w, 0, image_size.x*image_size.y*image_size.z*sizeof(float));
 	cubefilling <<< dimGrid, dimBlock >>>(dev_image, dev_cube_wi, dev_cube_w, image_size);
 
 
