@@ -1,22 +1,37 @@
 #include "convolution_shared.h"
 
-__global__ void convolution__shared_row(float *output, const float *input, const float *kernel, const int ksize, const dim3 imsize)
+__global__ void convolution_shared_row(float *output, const float *input, const float *kernel, const int kernel_size, const dim3 imsize)
 {	
-	unsigned int ix = blockDim.x*blockIdx.x + threadIdx.x;
-	unsigned int iy = blockDim.y*blockIdx.y + threadIdx.y;
-	unsigned int i = ix + iy*blockDim.x*gridDim.x;
-	//unsigned int i = blockDim.x*blockIdx.x + threadIdx.x;
-	unsigned int imsize_x = imsize.x;
-	unsigned int imsize_y = imsize.y;
-	unsigned int imsize_z = imsize.z;
-	unsigned int im_size = imsize_x*imsize_y*imsize_z;
-	//printf("i = %d\n", i);
-	//idx = x_i + imsize_x*y_i + imsize_x*imsize_y*z_i
-	unsigned int z_i = i / (unsigned int) (imsize_x*imsize_y);
-	unsigned int y_i = (i - z_i*(unsigned int)(imsize_x*imsize_y)) / imsize_x;
-	unsigned int x_i = i - y_i*imsize_x - z_i*(unsigned int)(imsize_x*imsize_y);
+	int ix = blockDim.x*blockIdx.x + threadIdx.x;
+	int iy = blockDim.y*blockIdx.y + threadIdx.y;
+	int cube_idx = ix + iy*blockDim.x*gridDim.x;
 
-	__shared__ float s_image[BLOCK_DIM][BLOCK_DIM];
+
+	int cube_size = imsize.x*imsize.y*imsize.z;
+
+	int z_i = blockIdx.z;
+	//all fucked up here
+	int y_i = (cube_idx - z_i*(imsize.x*imsize.y)) / imsize.x;
+	int x_i = cube_idx - y_i*imsize.x - z_i*(imsize.x*imsize.y);
+
+	const int radius_size = kernel_size / 2;
+
+	extern __shared__ float s_image[]; //size is on kernel call, (block_dim_x + 2 * k_radius_xy)*block_dim_y
+
+	//s_image += threadIdx.x*blockDim.y; //jump to right line
+
+	s_image[threadIdx.y*blockDim.x + threadIdx.x + radius_size] = input[cube_idx];
+
+	if (threadIdx.x < radius_size) //is on the left part of the shared memory!
+	{
+		s_image[threadIdx.y*blockDim.x + threadIdx.x] = 0.0;
+	}
+	else if (threadIdx.x >(blockDim.x + 2 * radius_size))
+	{
+		s_image[threadIdx.y*blockDim.x + threadIdx.x] = 0.0;
+	}
+		
+	
 	
 	/*
 	double result = 0.0;
@@ -67,11 +82,16 @@ void callingConvolution_shared(float *dev_cube_wi_out, float *dev_cube_w_out, fl
 {
 	/**Getting shared memory size and max block size 
 	*/
+
+	//TODO: intitialize this on main
 	cudaDeviceProp deviceProp;
 	cudaGetDeviceProperties(&deviceProp, 0); // device = 0;
 
-	int max_shared_mem = deviceProp.sharedMemPerBlock/sizeof(float);
-	
+	int kernel_xy_size = 25;
+
+
+	int max_shared_mem = deviceProp.sharedMemPerBlock / sizeof(float);
+
 	//deviceProp.maxThreadsPerMultiProcessor;
 	//deviceProp.sharedMemPerMultiprocessor;
 	int k_radius_xy = kernel_xy_size / 2;
@@ -81,15 +101,19 @@ void callingConvolution_shared(float *dev_cube_wi_out, float *dev_cube_w_out, fl
 
 	if (block_dim_x*block_dim_y > deviceProp.maxThreadsPerBlock)
 	{
-		block_dim_y = block_dim_x / deviceProp.maxThreadsPerBlock;
+		block_dim_y = deviceProp.maxThreadsPerBlock / block_dim_x;
 	}
 
+	int max_shared_mem = deviceProp.sharedMemPerBlock/sizeof(float);
+	
+	int shared_memory_size = (block_dim_x + 2 * k_radius_xy)*block_dim_y;
 
 
-	const dim3 block(BLOCK_DIM, BLOCK_DIM); //threads per block 32 32
+	const dim3 block(block_dim_x, block_dim_y); //threads per block 32 32
+	const dim3 grid((image_dimensions.x + block_dim_x - 1) / block_dim_x, (image_dimensions.y + block_dim_y - 1) / block_dim_y, 256);
 
-	int grin = 256;
-	const dim3 grid(grin, grin);
+	convolution_shared_row <<< grid, block, shared_memory_size >>>(dev_cube_wi_out, dev_cube_wi, dev_kernel_xy, kernel_xy_size, image_dimensions);
+	cudaDeviceSynchronize();
 	/*
 	
 	convolution <<< grid, block >>>(dev_cube_wi_out, dev_cube_wi, dev_kernel_xy, kernel_xy_size, image_dimensions, X_DIR);
