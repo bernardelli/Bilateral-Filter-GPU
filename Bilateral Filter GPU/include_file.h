@@ -1,7 +1,7 @@
 #ifndef INCLUDE_FILE_H
 #define INCLUDE_FILE_H
 
-#ifdef __INTELLLISENSE__
+#ifdef __INTELLISENSE__
 void __syncthreads();
 #endif
 

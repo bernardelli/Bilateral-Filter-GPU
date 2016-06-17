@@ -37,8 +37,8 @@ int main(int argc, char **argv)
 	kernel_xy = (float*)malloc(kernel_xy_size*sizeof(float));
 	define_kernel(kernel_xy, sigma_xy, kernel_xy_size);
 
-	float sigma_eps = 3;
-	kernel_eps_size = 7;
+	float sigma_eps = 10;
+	kernel_eps_size = 21;
 	kernel_eps = (float*)malloc(kernel_eps_size*sizeof(float));
 	define_kernel(kernel_eps, sigma_eps, kernel_eps_size);
 

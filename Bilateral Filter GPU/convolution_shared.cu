@@ -115,6 +115,9 @@ __global__ void convolution_shared_eps(float *output, const float *input, const 
 	}
 
 	output[cube_idx] = result;
+
+	//if (result > 0 )
+		//printf("%.01f \n", result);
 }
 
 
@@ -154,7 +157,7 @@ void callingConvolution_shared(float *dev_cube_wi_out, float *dev_cube_w_out, fl
 	convolution_shared_row <<< grid, block, shared_memory_size >>>(dev_cube_wi_out, dev_cube_wi, dev_kernel_xy, kernel_xy_size, image_dimensions);
 	cudaDeviceSynchronize();
 	swap2(&dev_cube_wi_out, &dev_cube_wi);
-	convolution_shared_row << < grid, block, shared_memory_size >> >(dev_cube_w_out, dev_cube_w, dev_kernel_xy, kernel_xy_size, image_dimensions);
+	convolution_shared_row <<< grid, block, shared_memory_size >>>(dev_cube_w_out, dev_cube_w, dev_kernel_xy, kernel_xy_size, image_dimensions);
 	cudaDeviceSynchronize();
 	swap2(&dev_cube_w_out, &dev_cube_w);
 
@@ -178,10 +181,10 @@ void callingConvolution_shared(float *dev_cube_wi_out, float *dev_cube_w_out, fl
 
 	convolution_shared_col <<< grid2, block2, shared_memory_size >>>(dev_cube_wi_out, dev_cube_wi, dev_kernel_xy, kernel_xy_size, image_dimensions);
 	cudaDeviceSynchronize();
-	//swap2(&dev_cube_wi_out, &dev_cube_wi);
+	swap2(&dev_cube_wi_out, &dev_cube_wi);
 	convolution_shared_col <<< grid2, block2, shared_memory_size >>>(dev_cube_w_out, dev_cube_w, dev_kernel_xy, kernel_xy_size, image_dimensions);
 	cudaDeviceSynchronize();
-	//swap2(&dev_cube_w_out, &dev_cube_w);
+	swap2(&dev_cube_w_out, &dev_cube_w);
 	// conv eps
 
 	//Conv Col
@@ -202,10 +205,10 @@ void callingConvolution_shared(float *dev_cube_wi_out, float *dev_cube_w_out, fl
 	const dim3 block3(block_dim_eps, block_dim_x); //threads per block 32 32
 	const dim3 grid3((image_dimensions.z + block_dim_eps - 1) / block_dim_eps, (image_dimensions.x + block_dim_x - 1) / block_dim_x, image_dimensions.y);
 
-	convolution_shared_eps << < grid3, block3, shared_memory_size >> >(dev_cube_wi_out, dev_cube_wi, dev_kernel_eps, kernel_eps_size, image_dimensions);
+	convolution_shared_eps <<< grid3, block3, shared_memory_size >>>(dev_cube_wi_out, dev_cube_wi, dev_kernel_eps, kernel_eps_size, image_dimensions);
 	cudaDeviceSynchronize();
 	//swap2(&dev_cube_wi_out, &dev_cube_wi);
-	convolution_shared_eps << < grid3, block3, shared_memory_size >> >(dev_cube_w_out, dev_cube_w, dev_kernel_eps, kernel_eps_size, image_dimensions);
+	convolution_shared_eps <<< grid3, block3, shared_memory_size >>>(dev_cube_w_out, dev_cube_w, dev_kernel_eps, kernel_eps_size, image_dimensions);
 	cudaDeviceSynchronize();
 	//swap2(&dev_cube_w_out, &dev_cube_w);
 	
