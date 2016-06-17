@@ -3,6 +3,7 @@
 
 #include "slicing.h"
 #include "convolution.h"
+#include "convolution_shared.h"
 #include "little_cuda_functions.h"
 #include "cubefilling.cuh"
 
@@ -29,25 +30,6 @@ int main(int argc, char **argv)
 	
 	
 	/********************************************************************************
-	*** loading image and display it on desktop                                   ***
-	********************************************************************************/
-	image = cv::imread("lena.bmp", CV_LOAD_IMAGE_GRAYSCALE);   // Read the file
-
-
-	if (!image.data) {
-		std::cerr << "Could not open or find \"lena.bmp\"." << std::endl;
-		return 1;
-	}
-	
-	image_size = image.rows*image.cols;
-	size = image_size * 256;
-	dim3 dimensions = dim3(image.rows, image.cols, 256);
-
-	cv::namedWindow("Original image", cv::WINDOW_AUTOSIZE);
-	cv::imshow("Original image", image);
-	image.convertTo(image, CV_32F);
-	
-	/********************************************************************************
 	*** define kernel                                                             ***
 	********************************************************************************/
 	float sigma_xy = 2.5;
@@ -59,6 +41,31 @@ int main(int argc, char **argv)
 	kernel_eps_size = 57;
 	kernel_eps = (float*)malloc(kernel_eps_size*sizeof(float));
 	define_kernel(kernel_eps, sigma_eps, kernel_eps_size);
+
+
+	/********************************************************************************
+	*** loading image and display it on desktop                                   ***
+	********************************************************************************/
+	image = cv::imread("lena.bmp", CV_LOAD_IMAGE_GRAYSCALE);   // Read the file
+
+
+	if (!image.data) {
+		std::cerr << "Could not open or find \"lena.bmp\"." << std::endl;
+		return 1;
+	}
+	
+
+	//copyMakeBorder(image, image, sigma_xy / 2, sigma_xy / 2, sigma_xy / 2, sigma_xy / 2, IPL_BORDER_CONSTANT, 0);
+	cv::namedWindow("Original image", cv::WINDOW_AUTOSIZE);
+	cv::imshow("Original image", image);
+	image.convertTo(image, CV_32F);
+	image_size = image.rows*image.cols;
+	size = image_size * 256;
+	dim3 dimensions = dim3(image.rows, image.cols, 256);
+
+
+	
+	
 	
 	
 	/********************************************************************************
@@ -112,7 +119,7 @@ int main(int argc, char **argv)
 	/********************************************************************************
 	*** start concolution on gpu                                                  ***
 	********************************************************************************/
-	callingConvolution(dev_cube_wi_out, dev_cube_w_out, dev_cube_wi, dev_cube_w, dev_kernel_xy, kernel_xy_size, dev_kernel_eps, kernel_eps_size, dimensions);
+	callingConvolution_shared(dev_cube_wi_out, dev_cube_w_out, dev_cube_wi, dev_cube_w, dev_kernel_xy, kernel_xy_size, dev_kernel_eps, kernel_eps_size, dimensions);
 	
 	
 	/********************************************************************************
