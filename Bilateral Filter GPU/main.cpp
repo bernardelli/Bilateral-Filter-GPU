@@ -32,13 +32,13 @@ int main(int argc, char **argv)
 	/********************************************************************************
 	*** define kernel                                                             ***
 	********************************************************************************/
-	float sigma_xy = 2.5;
+	float sigma_xy = 3;
 	kernel_xy_size = 7;
 	kernel_xy = (float*)malloc(kernel_xy_size*sizeof(float));
 	define_kernel(kernel_xy, sigma_xy, kernel_xy_size);
 
-	float sigma_eps = 25.5;
-	kernel_eps_size = 57;
+	float sigma_eps = 3;
+	kernel_eps_size = 7;
 	kernel_eps = (float*)malloc(kernel_eps_size*sizeof(float));
 	define_kernel(kernel_eps, sigma_eps, kernel_eps_size);
 

@@ -1,6 +1,10 @@
 #ifndef INCLUDE_FILE_H
 #define INCLUDE_FILE_H
 
+#ifdef __INTELLLISENSE__
+void __syncthreads();
+#endif
+
 
 #include <math.h>
 #include <iostream>
