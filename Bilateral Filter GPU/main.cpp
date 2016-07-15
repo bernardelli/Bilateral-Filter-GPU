@@ -84,7 +84,8 @@ int main(int argc, char **argv)
 	/********************************************************************************
 	*** choose which GPU to run on, change this on a multi-GPU system             ***
 	********************************************************************************/
-	cudaStatus = cudaSetDevice(2);
+	int device = 0;
+	cudaStatus = cudaSetDevice(device);
 	if (cudaStatus != cudaSuccess) {
 		fprintf(stderr, "cudaSetDevice failed!  Do you have a CUDA-capable GPU installed?");
 	}
@@ -127,13 +128,13 @@ int main(int argc, char **argv)
 	********************************************************************************/
 	//maybe use cudaPitchedPtr for cubes
 	float cubefilling_time = callingCubefilling(dev_image, dev_cube_wi, dev_cube_w, dimensions, scale_xy, scale_eps, dimensions_down);
-	std::cout << "Filling ok with time = " << cubefilling_time << std::endl;
+	std::cout << "Filling ok with time = " << cubefilling_time << " ms" << std::endl;
 	
 	/********************************************************************************
 	*** start concolution on gpu                                                  ***
 	********************************************************************************/
-	float convolution_time = callingConvolution_shared(dev_cube_wi_out, dev_cube_w_out, dev_cube_wi, dev_cube_w, dev_kernel_xy, kernel_xy_size, dev_kernel_eps, kernel_eps_size, dimensions_down);
-    std::cout << "Convolution ok with time = " << convolution_time << std::endl;
+	float convolution_time = callingConvolution_shared(dev_cube_wi_out, dev_cube_w_out, dev_cube_wi, dev_cube_w, dev_kernel_xy, kernel_xy_size, dev_kernel_eps, kernel_eps_size, dimensions_down, device);
+    std::cout << "Convolution ok with time = " << convolution_time << " ms" << std::endl;
 
 	
 	/********************************************************************************
@@ -150,7 +151,7 @@ int main(int argc, char **argv)
 
 	cudaMemcpy(result_image, dev_image, dimensions.x*dimensions.y*sizeof(float), cudaMemcpyDeviceToHost);
 	cv::Mat output_imag(image.rows, image.cols, CV_32F, result_image);
-	std::cout << "Slicing ok with time = " << slicing_time << std::endl;
+	std::cout << "Slicing ok with time = " << slicing_time << " ms" << std::endl;
 	
 	/********************************************************************************
 	*** free every malloced space                                                 ***
