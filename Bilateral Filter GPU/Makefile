@@ -4,7 +4,7 @@ INCD := -I"/scratch-local/usr/include" -I"/opt/cuda/include"
 
 LIBS := -L"/opt/cuda/lib64" -L"/scratch-local/usr/lib"
 
-CFLAGS += -std=c++11 -pg -D_DEBUG -g
+CFLAGS += -std=c++11 -D_DEBUG -g
 
 export PKG_CONFIG_PATH  := /scratch-local/usr/lib64/pkgconfig/
 export PATH             := /opt/cuda/bin:$(PATH)
