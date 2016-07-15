@@ -56,8 +56,10 @@ int main(int argc, char **argv)
 	
 
 	//copyMakeBorder(image, image, sigma_xy / 2, sigma_xy / 2, sigma_xy / 2, sigma_xy / 2, IPL_BORDER_CONSTANT, 0);
+#ifndef  __linux__
 	cv::namedWindow("Original image", cv::WINDOW_AUTOSIZE);
 	cv::imshow("Original image", image);
+#endif
 	image.convertTo(image, CV_32F);
 	image_size = image.rows*image.cols;
 	size = image_size * 256;
@@ -147,12 +149,14 @@ int main(int argc, char **argv)
 	/********************************************************************************
 	*** show filtered image and save image                                        ***
 	********************************************************************************/
-	
+	cv::imwrite("Result.bmp", output_imag);
+#ifndef  __linux__
 	cv::namedWindow("Filtered image", cv::WINDOW_AUTOSIZE);
 
 	cv::imshow("Filtered image", output_imag/256);
-	cv::imwrite("Result.bmp", output_imag);
+
 	cv::waitKey(0);
+#endif
 	free(result_image); //needs to be freed after using output_imag
 	
 	/********************************************************************************
