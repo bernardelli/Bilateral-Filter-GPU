@@ -75,9 +75,9 @@ __global__ void slicing( float *dev_image, const float *dev_cube_wi, const float
 	}
 }*/
 
-void callingSlicing(float* dev_image, const float *dev_cube_wi, const float *dev_cube_w, const dim3 imsize, int scale_xy, int scale_eps, dim3 dimensions_down)
+int callingSlicing(float* dev_image, const float *dev_cube_wi, const float *dev_cube_w, const dim3 imsize, int scale_xy, int scale_eps, dim3 dimensions_down)
 {
-	
+	int slicing_status = 0;
 	const dim3 block2(16, 16);
 
 	//Calculate grid size to cover the whole image
@@ -103,6 +103,7 @@ void callingSlicing(float* dev_image, const float *dev_cube_wi, const float *dev
 
 	if (cudaStatus != cudaSuccess) {
 		std::cout << "error on copying to array1" << std::endl;
+		slicing_status = 1;
 	}
 	cudaMemcpy3DParms copyParams2 = { 0 };
 	copyParams2.srcPtr = make_cudaPitchedPtr((void*) dev_cube_w,
@@ -114,6 +115,7 @@ void callingSlicing(float* dev_image, const float *dev_cube_wi, const float *dev
 	cudaStatus = cudaMemcpy3D(&copyParams2);
 	if (cudaStatus != cudaSuccess) {
 		std::cout << "error on copying to array2"<< std::endl;
+		slicing_status = 1;
 	}
 	//cudaMemcpyToArray(dev_cube_wi_array, 0, 0, dev_cube_wi, dimensions_down.x*dimensions_down.y*dimensions_down.z, cudaMemcpyDeviceToDevice);
 	//cudaMemcpyToArray(dev_cube_w_array, 0, 0, dev_cube_w, dimensions_down.x*dimensions_down.y*dimensions_down.z, cudaMemcpyDeviceToDevice);
@@ -135,4 +137,5 @@ void callingSlicing(float* dev_image, const float *dev_cube_wi, const float *dev
 	cudaUnbindTexture(w_tex);
 	cudaFreeArray(dev_cube_wi_array);
 	cudaFreeArray(dev_cube_w_array);
+	return slicing_status;
 }
