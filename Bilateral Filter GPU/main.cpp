@@ -2,7 +2,7 @@
 
 
 #include "slicing.h"
-#include "convolution.h"
+//#include "convolution.h"
 #include "convolution_shared.h"
 #include "little_cuda_functions.h"
 #include "cubefilling.cuh"
@@ -11,13 +11,14 @@
 int main(int argc, char **argv)
 {
 	
+	
 	/********************************************************************************
 	*** initialization of variables                                               ***
 	********************************************************************************/
 	cv::Mat image;
-	int size, kernel_eps_size, kernel_xy_size, image_size;
+	int size, kernel_eps_size, kernel_xy_size, image_size, image_size_down, size_down;
 	float *kernel_eps, *kernel_xy, *dev_cube_wi, *dev_cube_w, *dev_cube_wi_out, 
-		*dev_cube_w_out, *dev_kernel_xy, *dev_kernel_eps, *dev_image, *result_image;
+		*dev_cube_w_out, *dev_kernel_xy, *dev_kernel_eps, *dev_image, *result_image;//,dev_cube_wi_uplsampled, dev_cube_w_uplsampled;
 	cudaError_t cudaStatus;
 
 
@@ -27,7 +28,14 @@ int main(int argc, char **argv)
 	*** printing compute capability of each device                                ***
 	********************************************************************************/
 	checkingDevices();
+
 	
+	/********************************************************************************
+	*** define scalling                                               ***
+	********************************************************************************/
+	int scale_xy = 10;
+	int scale_eps = 10;
+
 	
 	/********************************************************************************
 	*** define kernel                                                             ***
@@ -63,8 +71,11 @@ int main(int argc, char **argv)
 	image.convertTo(image, CV_32F);
 	image_size = image.rows*image.cols;
 	size = image_size * 256;
-	dim3 dimensions = dim3(image.rows, image.cols, 256);
+	image_size_down = ceil(image.rows/scale_xy)*ceil(image.cols/scale_xy);
 
+	size_down = image_size_down*ceil(256/scale_eps);
+	dim3 dimensions = dim3(image.rows, image.cols, 256);
+	dim3 dimensions_down = dim3(ceil(image.rows/scale_xy), ceil(image.cols/scale_xy), ceil(256/scale_eps));
 
 	
 	
@@ -82,10 +93,12 @@ int main(int argc, char **argv)
 	/********************************************************************************
 	*** allocate the space for cubes on gpu memory                                ***
 	********************************************************************************/
-	cudaStatus = allocateGpuMemory(&dev_cube_wi, size);
-	cudaStatus = allocateGpuMemory(&dev_cube_w, size);
-	cudaStatus = allocateGpuMemory(&dev_cube_wi_out, size);
-	cudaStatus = allocateGpuMemory(&dev_cube_w_out, size);
+	cudaStatus = allocateGpuMemory(&dev_cube_wi, size_down);
+	cudaStatus = allocateGpuMemory(&dev_cube_w, size_down);
+	//cudaStatus = allocateGpuMemory(&dev_cube_wi_uplsampled, size);
+	//cudaStatus = allocateGpuMemory(&dev_cube_w_uplsampled, size);
+	cudaStatus = allocateGpuMemory(&dev_cube_wi_out, size_down);
+	cudaStatus = allocateGpuMemory(&dev_cube_w_out, size_down);
 	cudaStatus = allocateGpuMemory(&dev_kernel_xy, kernel_xy_size);
 	cudaStatus = allocateGpuMemory(&dev_kernel_eps, kernel_eps_size);
 	cudaStatus = allocateGpuMemory(&dev_image, image_size);
@@ -99,10 +112,8 @@ int main(int argc, char **argv)
 
 	
 	/********************************************************************************
-	*** copy cubes on gpu memory                                                  ***
+	*** copy data on gpu memory                                                  ***
 	********************************************************************************/
-	//cudaStatus = copyToGpuMem(dev_cube_wi,cube_wi, size);
-	//cudaStatus = copyToGpuMem(dev_cube_w,cube_w, size);
 	cudaStatus = copyToGpuMem(dev_kernel_xy, kernel_xy, kernel_xy_size);
 	cudaStatus = copyToGpuMem(dev_kernel_eps, kernel_eps, kernel_eps_size);
 	cudaStatus = cudaMemcpy(dev_image, image.ptr(), image_size*sizeof(float), cudaMemcpyHostToDevice);////copyToGpuMem(dev_image,(float*) image.ptr(), size); //only works with raw function!
@@ -115,22 +126,29 @@ int main(int argc, char **argv)
 	*** setting up the cubes and filling them                                     ***
 	********************************************************************************/
 	//maybe use cudaPitchedPtr for cubes
-	callingCubefilling(dev_image, dev_cube_wi, dev_cube_w, dimensions);
-
+	callingCubefilling(dev_image, dev_cube_wi, dev_cube_w, dimensions, scale_xy, scale_eps, dimensions_down);
+	std::cout << "Filling ok" << std::endl;		
 	
 	/********************************************************************************
 	*** start concolution on gpu                                                  ***
 	********************************************************************************/
-	callingConvolution_shared(dev_cube_wi_out, dev_cube_w_out, dev_cube_wi, dev_cube_w, dev_kernel_xy, kernel_xy_size, dev_kernel_eps, kernel_eps_size, dimensions);
+	callingConvolution_shared(dev_cube_wi_out, dev_cube_w_out, dev_cube_wi, dev_cube_w, dev_kernel_xy, kernel_xy_size, dev_kernel_eps, kernel_eps_size, dimensions_down);
+	std::cout << "Convolution ok" << std::endl;	
 	
-	
+	/********************************************************************************
+	*** Upsample cubes with texture                                          ***
+	********************************************************************************/
+	// dev_cube_wi_out, dev_cube_w_out >>> dev_cube_wi_uplsampled, dev_cube_w_uplsampled
+	//upsample(dev_cube_wi_uplsampled, dev_cube_w_uplsampled, dev_cube_wi_out, dev_cube_w_out , dimensions, scale_xy, scale_eps, dimensions_down);
 	/********************************************************************************
 	*** start slicing on gpu                                                      ***
 	********************************************************************************/
 	result_image = (float*)malloc(image_size*sizeof(float));
-	callingSlicing(result_image, dev_image, dev_cube_wi_out, dev_cube_w_out, dimensions);
+	callingSlicing(dev_image, dev_cube_wi_out, dev_cube_w_out, dimensions,scale_xy, scale_eps, dimensions_down);
+
+	cudaMemcpy(result_image, dev_image, dimensions.x*dimensions.y*sizeof(float), cudaMemcpyDeviceToHost);
 	cv::Mat output_imag(image.rows, image.cols, CV_32F, result_image);
-	
+	std::cout << "Slicing ok" << std::endl;
 	/********************************************************************************
 	*** free every malloced space                                                 ***
 	********************************************************************************/
@@ -138,6 +156,8 @@ int main(int argc, char **argv)
 	cudaFree(dev_cube_wi);
 	cudaFree(dev_cube_w_out);
 	cudaFree(dev_cube_w);
+	//cudaFree(dev_cube_wi_upsampled);
+	//cudaFree(dev_cube_w_upsampled);
 	cudaFree(dev_kernel_xy);
 	cudaFree(dev_kernel_eps);
 	cudaFree(dev_image);

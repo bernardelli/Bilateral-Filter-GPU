@@ -3,8 +3,8 @@
 
 #include "include_file.h"
 
-__global__ void slicing(float *dev_image, const float*dev_cube_wi, const float*dev_cube_w, const dim3 imsize);
+__global__ void slicing(float *dev_image, const float*dev_cube_wi, const float*dev_cube_w, const dim3 imsize, int scale_xy, int scale_eps, dim3 dimensions_down);
 
-void callingSlicing(float* result_image, float* dev_image, const float *dev_cube_wi, const float *dev_cube_w, const dim3 imsize);
+void callingSlicing(float* dev_image, const float *dev_cube_wi, const float *dev_cube_w, const dim3 imsize, int scale_xy, int scale_eps, dim3 dimensions_down);
 
 #endif
