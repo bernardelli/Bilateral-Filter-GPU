@@ -30,7 +30,7 @@ __global__ void cubefilling(const float* image, float *dev_cube_wi, float *dev_c
 
 }
 
-void callingCubefilling(const float* dev_image, float *dev_cube_wi, float *dev_cube_w, const dim3 image_size, int scale_xy, int scale_eps, dim3 dimensions_down)
+float callingCubefilling(const float* dev_image, float *dev_cube_wi, float *dev_cube_w, const dim3 image_size, int scale_xy, int scale_eps, dim3 dimensions_down)
 {
 
 	
@@ -40,8 +40,22 @@ void callingCubefilling(const float* dev_image, float *dev_cube_wi, float *dev_c
 
 	//cudaMemset(dev_cube_wi, 0, image_size.x*image_size.y*image_size.z*sizeof(float)); //seems to be useless
 	//cudaMemset(dev_cube_w, 0, image_size.x*image_size.y*image_size.z*sizeof(float));
+	
+	cudaEvent_t start, stop;
+	float time;
+	cudaEventCreate(&start);
+	cudaEventCreate(&stop);
+	
+	cudaEventRecord(start);
+	
 	cubefilling <<< dimGrid, dimBlock >>>(dev_image, dev_cube_wi, dev_cube_w, image_size, scale_xy, scale_eps, dimensions_down);
-
+	
+	cudaEventRecord(stop);
+	cudaEventSynchronize(stop);
+	
+	cudaEventElapsedTime(&time, start, stop);
+	
+	return time;
 
 }
 

@@ -75,7 +75,7 @@ __global__ void slicing( float *dev_image, const float *dev_cube_wi, const float
 	}
 }*/
 
-int callingSlicing(float* dev_image, const float *dev_cube_wi, const float *dev_cube_w, const dim3 imsize, int scale_xy, int scale_eps, dim3 dimensions_down)
+float callingSlicing(float* dev_image, const float *dev_cube_wi, const float *dev_cube_w, const dim3 imsize, int scale_xy, int scale_eps, dim3 dimensions_down)
 {
 	int slicing_status = 0;
 	const dim3 block2(16, 16);
@@ -128,14 +128,24 @@ int callingSlicing(float* dev_image, const float *dev_cube_wi, const float *dev_
 	cudaGetTextureReference(&w_tex_ref, "w_tex");	
  	cudaBindTextureToArray(wi_tex_ref, dev_cube_wi_array, &channelFloat);//, cudaChannelFormatKindFloat); 	
 	cudaBindTextureToArray(w_tex_ref, dev_cube_w_array, &channelFloat);//, cudaChannelFormatKindFloat);
-
 	
+	
+	cudaEvent_t start, stop;
+	float time;
+	cudaEventCreate(&start);
+	cudaEventCreate(&stop);
+	
+	cudaEventRecord(start);
 	slicing <<< grid2, block2 >>> (dev_image, dev_cube_wi, dev_cube_w, imsize, scale_xy, scale_eps, dimensions_down);
 	cudaDeviceSynchronize();
-
+	cudaEventRecord(stop);
+	cudaEventSynchronize(stop);
+	
+	cudaEventElapsedTime(&time, start, stop);
+	
 	cudaUnbindTexture(wi_tex);
 	cudaUnbindTexture(w_tex);
 	cudaFreeArray(dev_cube_wi_array);
 	cudaFreeArray(dev_cube_w_array);
-	return slicing_status;
+	return time;
 }

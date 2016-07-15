@@ -121,7 +121,7 @@ __global__ void convolution_shared_eps(float *output, const float *input, const 
 }
 
 
-void callingConvolution_shared(float *dev_cube_wi_out, float *dev_cube_w_out, float *dev_cube_wi, float *dev_cube_w, const float *dev_kernel_xy, int kernel_xy_size, const float *dev_kernel_eps, int kernel_eps_size, dim3  image_dimensions)
+float callingConvolution_shared(float *dev_cube_wi_out, float *dev_cube_w_out, float *dev_cube_wi, float *dev_cube_w, const float *dev_kernel_xy, int kernel_xy_size, const float *dev_kernel_eps, int kernel_eps_size, dim3  image_dimensions)
 {
 	/**Getting shared memory size and max block size 
 	*/
@@ -153,12 +153,33 @@ void callingConvolution_shared(float *dev_cube_wi_out, float *dev_cube_w_out, fl
 
 	const dim3 block(block_dim_x, block_dim_y); //threads per block 32 32
 	const dim3 grid((image_dimensions.x + block_dim_x - 1) / block_dim_x, (image_dimensions.y + block_dim_y - 1) / block_dim_y, image_dimensions.z);
-
+	
+	cudaEvent_t start_row_1, stop_row_1, start_row_2, stop_row_2;
+	float time_shared_row_1, time_shared_row_2;
+	cudaEventCreate(&start_row_1);
+	cudaEventCreate(&stop_row_1);
+	cudaEventRecord(start_row_1);
+	
 	convolution_shared_row <<< grid, block, shared_memory_size >>>(dev_cube_wi_out, dev_cube_wi, dev_kernel_xy, kernel_xy_size, image_dimensions);
 	cudaDeviceSynchronize();
+	
+	cudaEventRecord(stop_row_1);
+	cudaEventSynchronize(stop_row_1);
+	cudaEventElapsedTime(&time_shared_row_1, start_row_1, stop_row_1);
+	
 	swap2(&dev_cube_wi_out, &dev_cube_wi);
+	
+	cudaEventCreate(&start_row_2);
+	cudaEventCreate(&stop_row_2);
+	cudaEventRecord(start_row_2);
+	
 	convolution_shared_row <<< grid, block, shared_memory_size >>>(dev_cube_w_out, dev_cube_w, dev_kernel_xy, kernel_xy_size, image_dimensions);
 	cudaDeviceSynchronize();
+	
+	cudaEventRecord(stop_row_2);
+	cudaEventSynchronize(stop_row_2);
+	cudaEventElapsedTime(&time_shared_row_2, start_row_2, stop_row_2);
+	
 	swap2(&dev_cube_w_out, &dev_cube_w);
 
 	//Conv Col
@@ -178,12 +199,33 @@ void callingConvolution_shared(float *dev_cube_wi_out, float *dev_cube_w_out, fl
 
 	const dim3 block2(block_dim_x, block_dim_y); //threads per block 32 32
 	const dim3 grid2((image_dimensions.x + block_dim_x - 1) / block_dim_x, (image_dimensions.y + block_dim_y - 1) / block_dim_y, image_dimensions.z);
-
+	
+	cudaEvent_t start_col_1, stop_col_1, start_col_2, stop_col_2;
+	float time_shared_col_1, time_shared_col_2;
+	cudaEventCreate(&start_col_1);
+	cudaEventCreate(&stop_col_1);
+	cudaEventRecord(start_col_1);
+	
 	convolution_shared_col <<< grid2, block2, shared_memory_size >>>(dev_cube_wi_out, dev_cube_wi, dev_kernel_xy, kernel_xy_size, image_dimensions);
 	cudaDeviceSynchronize();
+	
+	cudaEventRecord(stop_col_1);
+	cudaEventSynchronize(stop_col_1);
+	cudaEventElapsedTime(&time_shared_col_1, start_col_1, stop_col_1);
+	
 	swap2(&dev_cube_wi_out, &dev_cube_wi);
+	
+	cudaEventCreate(&start_col_2);
+	cudaEventCreate(&stop_col_2);
+	cudaEventRecord(start_col_2);
+	
 	convolution_shared_col <<< grid2, block2, shared_memory_size >>>(dev_cube_w_out, dev_cube_w, dev_kernel_xy, kernel_xy_size, image_dimensions);
 	cudaDeviceSynchronize();
+	
+	cudaEventRecord(stop_col_2);
+	cudaEventSynchronize(stop_col_2);
+	cudaEventElapsedTime(&time_shared_col_2, start_col_2, stop_col_2);
+	
 	swap2(&dev_cube_w_out, &dev_cube_w);
 	// conv eps
 
@@ -205,13 +247,31 @@ void callingConvolution_shared(float *dev_cube_wi_out, float *dev_cube_w_out, fl
 	const dim3 block3(block_dim_eps, block_dim_x); //threads per block 32 32
 	const dim3 grid3((image_dimensions.z + block_dim_eps - 1) / block_dim_eps, (image_dimensions.x + block_dim_x - 1) / block_dim_x, image_dimensions.y);
 
+	cudaEvent_t start_eps_1, stop_eps_1, start_eps_2, stop_eps_2;
+	float time_shared_eps_1, time_shared_eps_2;
+	cudaEventCreate(&start_eps_1);
+	cudaEventCreate(&stop_eps_1);
+	cudaEventRecord(start_eps_1);
+	
 	convolution_shared_eps <<< grid3, block3, shared_memory_size >>>(dev_cube_wi_out, dev_cube_wi, dev_kernel_eps, kernel_eps_size, image_dimensions);
 	cudaDeviceSynchronize();
-	//swap2(&dev_cube_wi_out, &dev_cube_wi);
+	
+	cudaEventRecord(stop_eps_1);
+	cudaEventSynchronize(stop_eps_1);
+	cudaEventElapsedTime(&time_shared_eps_1, start_eps_1, stop_eps_1);
+	
+	cudaEventCreate(&start_eps_2);
+	cudaEventCreate(&stop_eps_2);
+	cudaEventRecord(start_eps_2);
+	
 	convolution_shared_eps <<< grid3, block3, shared_memory_size >>>(dev_cube_w_out, dev_cube_w, dev_kernel_eps, kernel_eps_size, image_dimensions);
 	cudaDeviceSynchronize();
-	//swap2(&dev_cube_w_out, &dev_cube_w);
 	
+	cudaEventRecord(stop_eps_2);
+	cudaEventSynchronize(stop_eps_2);
+	cudaEventElapsedTime(&time_shared_eps_2, start_eps_2, stop_eps_2);
+	float time = time_shared_row_1 + time_shared_row_2 + time_shared_col_1 + time_shared_col_2 + time_shared_eps_1 + time_shared_eps_2;
+	return time;
 }
 
 void swap2(float** a, float** b){

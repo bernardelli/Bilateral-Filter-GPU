@@ -126,14 +126,14 @@ int main(int argc, char **argv)
 	*** setting up the cubes and filling them                                     ***
 	********************************************************************************/
 	//maybe use cudaPitchedPtr for cubes
-	callingCubefilling(dev_image, dev_cube_wi, dev_cube_w, dimensions, scale_xy, scale_eps, dimensions_down);
-	std::cout << "Filling ok" << std::endl;
+	float cubefilling_time = callingCubefilling(dev_image, dev_cube_wi, dev_cube_w, dimensions, scale_xy, scale_eps, dimensions_down);
+	std::cout << "Filling ok with time = " << cubefilling_time << std::endl;
 	
 	/********************************************************************************
 	*** start concolution on gpu                                                  ***
 	********************************************************************************/
-	callingConvolution_shared(dev_cube_wi_out, dev_cube_w_out, dev_cube_wi, dev_cube_w, dev_kernel_xy, kernel_xy_size, dev_kernel_eps, kernel_eps_size, dimensions_down);
-        std::cout << "Convolution ok" << std::endl;
+	float convolution_time = callingConvolution_shared(dev_cube_wi_out, dev_cube_w_out, dev_cube_wi, dev_cube_w, dev_kernel_xy, kernel_xy_size, dev_kernel_eps, kernel_eps_size, dimensions_down);
+    std::cout << "Convolution ok with time = " << convolution_time << std::endl;
 
 	
 	/********************************************************************************
@@ -146,14 +146,12 @@ int main(int argc, char **argv)
 	********************************************************************************/
 	
 	result_image = (float*)malloc(image_size*sizeof(float));
-	int slicing_status = callingSlicing(dev_image, dev_cube_wi_out, dev_cube_w_out, dimensions,scale_xy, scale_eps, dimensions_down);
+	float slicing_time = callingSlicing(dev_image, dev_cube_wi_out, dev_cube_w_out, dimensions,scale_xy, scale_eps, dimensions_down);
 
 	cudaMemcpy(result_image, dev_image, dimensions.x*dimensions.y*sizeof(float), cudaMemcpyDeviceToHost);
 	cv::Mat output_imag(image.rows, image.cols, CV_32F, result_image);
-	if (slicing_status == 0)
-		std::cout << "Slicing ok" << std::endl;
-	else
-		std::cout << "Slicing error" << std::endl;
+	std::cout << "Slicing ok with time = " << slicing_time << std::endl;
+	
 	/********************************************************************************
 	*** free every malloced space                                                 ***
 	********************************************************************************/
