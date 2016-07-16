@@ -153,24 +153,38 @@ float callingSlicing(float* dev_image, const float *dev_cube_wi, const float *de
 
 	const dim3 grid2(((imsize.x + block2.x - 1) / block2.x), ((imsize.y + block2.y - 1) / block2.y));
 	
+	cudaEvent_t start_1, stop_1;
+        float time_1;
+        cudaEventCreate(&start_1);
+        cudaEventCreate(&stop_1);
+
+        cudaEventRecord(start_1);
+
 	slicing <<< grid2, block2 >>> (dev_image, imsize, scale_xy, scale_eps);
 	
-	cudaEvent_t start, stop;
-	float time;
-	cudaEventCreate(&start);
-	cudaEventCreate(&stop);
+	cudaEventRecord(stop_1);
+        cudaEventSynchronize(stop_1);
+
+        cudaEventElapsedTime(&time_1, start_1, stop_1);
+
+
+	cudaEvent_t start_2, stop_2;
+	float time_2;
+	cudaEventCreate(&start_2);
+	cudaEventCreate(&stop_2);
 	
-	cudaEventRecord(start);
+	cudaEventRecord(start_2);
 	slicing <<< grid2, block2 >>> (dev_image, imsize, scale_xy, scale_eps);
 	cudaDeviceSynchronize();
-	cudaEventRecord(stop);
-	cudaEventSynchronize(stop);
+	cudaEventRecord(stop_2);
+	cudaEventSynchronize(stop_2);
 	
-	cudaEventElapsedTime(&time, start, stop);
+	cudaEventElapsedTime(&time_2, start_2, stop_2);
 	
 	cudaUnbindTexture(wi_tex);
 	cudaUnbindTexture(w_tex);
 	cudaFreeArray(dev_cube_wi_array);
 	cudaFreeArray(dev_cube_w_array);
+	float time = time_1 + time_2;
 	return time;
 }

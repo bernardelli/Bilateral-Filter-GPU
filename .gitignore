@@ -49,6 +49,7 @@ build/
 fbb
 gmon.out
 *.o
+*.bmp
 
 # Visual C++ cache files
 ipch/

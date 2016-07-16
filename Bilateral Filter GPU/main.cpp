@@ -136,8 +136,9 @@ int main(int argc, char **argv)
 	*** start concolution on gpu                                                  ***
 	********************************************************************************/
 	float convolution_time = callingConvolution_shared(dev_cube_wi_out, dev_cube_w_out, dev_cube_wi, dev_cube_w, dev_kernel_xy, kernel_xy_size, dev_kernel_eps, kernel_eps_size, dimensions_down, device);
-    std::cout << "Convolution ok with time = " << convolution_time << " ms" << std::endl;
-
+	std::cout << "Convolution ok with time = " << convolution_time << " ms" << std::endl;
+	
+	
 	/********************************************************************************
 	*** start slicing on gpu                                                      ***
 	********************************************************************************/
@@ -148,6 +149,9 @@ int main(int argc, char **argv)
 	cudaMemcpy(result_image, dev_image, dimensions.x*dimensions.y*sizeof(float), cudaMemcpyDeviceToHost);
 	cv::Mat output_imag(image.rows, image.cols, CV_32F, result_image);
 	std::cout << "Slicing ok with time = " << slicing_time << " ms" << std::endl;
+	
+	std::cout << "Total time: " << cubefilling_time + convolution_time + slicing_time << " ms" << std::endl;
+	
 	
 	/********************************************************************************
 	*** free every malloced space                                                 ***
