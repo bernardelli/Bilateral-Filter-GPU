@@ -150,8 +150,6 @@ float callingSlicing(float* dev_image, const float *dev_cube_wi, const float *de
 		std::cout << "error on bind text " << cudaGetErrorString(cudaStatus) << std::endl;
 	}
 	
-	const dim3 block2(16, 16);
-
 
 	const dim3 grid2(((imsize.x + block2.x - 1) / block2.x), ((imsize.y + block2.y - 1) / block2.y));
 	
@@ -163,7 +161,7 @@ float callingSlicing(float* dev_image, const float *dev_cube_wi, const float *de
 	cudaEventCreate(&stop);
 	
 	cudaEventRecord(start);
-	slicing <<< grid2, block2 >>> (dev_image, dev_cube_wi, dev_cube_w, imsize, scale_xy, scale_eps, dimensions_down);
+	slicing <<< grid2, block2 >>> (dev_image, imsize, scale_xy, scale_eps);
 	cudaDeviceSynchronize();
 	cudaEventRecord(stop);
 	cudaEventSynchronize(stop);
