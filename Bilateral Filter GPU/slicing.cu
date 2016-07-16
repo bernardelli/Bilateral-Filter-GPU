@@ -3,9 +3,8 @@
 texture<float, 3> wi_tex;
 texture<float, 3> w_tex;
 
-__global__ void slicing( float *dev_image, const float *dev_cube_wi, const float *dev_cube_w, const dim3 imsize, int scale_xy, int scale_eps, dim3 dimensions_down)
+__global__ void slicing( float *dev_image, const dim3 imsize, int scale_xy, int scale_eps)
 {
-
 	int i = blockIdx.x * blockDim.x + threadIdx.x;
 	int j = blockIdx.y * blockDim.y + threadIdx.y;
 
@@ -13,7 +12,7 @@ __global__ void slicing( float *dev_image, const float *dev_cube_wi, const float
 	if ((i < imsize.x) && (j < imsize.y))
 	{
 
-		int k = (int)dev_image[j + imsize.y*i];
+		float k = dev_image[i + imsize.x*j];
 		//printf("value = %d, i = %d, j = %d\n", value, i, j);
 
 
@@ -56,7 +55,7 @@ __global__ void slicing( float *dev_image, const float *dev_cube_wi, const float
 
 
 		//dev_image[j + imsize.y*i] = ((1.0-i_rest)*interpolate_wi2[0] + i_rest*interpolate_wi2[1])/((1.0-i_rest)*interpolate_w2[0] + i_rest*interpolate_w2[1]);
-		dev_image[j + imsize.y*i] = tex3D(wi_tex, 0.5+i/scale_xy, 0.5+j/scale_xy, 0.5+k/scale_eps)/tex3D(w_tex, 0.5+i/scale_xy, 0.5+j/scale_xy, 0.5+k/scale_eps);
+		dev_image[i + imsize.x*j] = tex3D(wi_tex, 0.5 + (float)i / (float)scale_xy, 0.5 + (float)j / (float)scale_xy, 0.5 + (float)k / (float)scale_eps) / tex3D(w_tex, 0.5 + (float)i / (float)scale_xy, 0.5 + (float)j / (float)scale_xy, 0.5 + (float)k / (float)scale_eps);
 		
 	}
 
@@ -79,27 +78,26 @@ float callingSlicing(float* dev_image, const float *dev_cube_wi, const float *de
 {
 	int slicing_status = 0;
 	const dim3 block2(16, 16);
-
-	//Calculate grid size to cover the whole image
-	const dim3 grid2(((imsize.x + block2.x - 1) / block2.x), ((imsize.y + block2.y - 1) / block2.y));
-
-
+	
 	cudaExtent extent1 = make_cudaExtent( dimensions_down.x*sizeof(float), dimensions_down.y, dimensions_down.z); 
 	cudaExtent extent2 = make_cudaExtent( dimensions_down.x, dimensions_down.y, dimensions_down.z); 
 	cudaArray *dev_cube_wi_array, *dev_cube_w_array;
 
 	cudaChannelFormatDesc channelFloat = cudaCreateChannelDesc<float>();
-	cudaMalloc3DArray(&dev_cube_wi_array, &channelFloat, extent2);	
-	cudaMalloc3DArray(&dev_cube_w_array, &channelFloat, extent2);
+	cudaError_t cudaStatus = cudaMalloc3DArray(&dev_cube_wi_array, &channelFloat, extent2);
+	cudaStatus = cudaMalloc3DArray(&dev_cube_w_array, &channelFloat, extent2);
+	if (cudaStatus != cudaSuccess) {
+		std::cout << "error on malloc3darray " << cudaGetErrorString(cudaStatus) << std::endl;
+	}
 
 	cudaMemcpy3DParms copyParams1 = { 0 };
 	copyParams1.srcPtr = make_cudaPitchedPtr((void*) dev_cube_wi,
-		dimensions_down.x * sizeof(float),
-		dimensions_down.y, dimensions_down.z);
+		dimensions_down.x* sizeof(float), //https://devtalk.nvidia.com/default/topic/481806/copy-3d-data-from-host-to-device/
+		dimensions_down.x, dimensions_down.y);
 	copyParams1.dstArray = dev_cube_wi_array;
 	copyParams1.extent = extent2;
 	copyParams1.kind = cudaMemcpyDeviceToDevice;
-	cudaError_t cudaStatus = cudaMemcpy3D(&copyParams1);
+	cudaStatus = cudaMemcpy3D(&copyParams1);
 
 	if (cudaStatus != cudaSuccess) {
 		std::cout << "error on copying to array1" << std::endl;
@@ -108,7 +106,7 @@ float callingSlicing(float* dev_image, const float *dev_cube_wi, const float *de
 	cudaMemcpy3DParms copyParams2 = { 0 };
 	copyParams2.srcPtr = make_cudaPitchedPtr((void*) dev_cube_w,
 		dimensions_down.x * sizeof(float),
-		dimensions_down.y, dimensions_down.z);
+		dimensions_down.x, dimensions_down.y);
 	copyParams2.dstArray = dev_cube_w_array;
 	copyParams2.extent = extent2;
 	copyParams2.kind = cudaMemcpyDeviceToDevice;
@@ -122,13 +120,42 @@ float callingSlicing(float* dev_image, const float *dev_cube_wi, const float *de
 	//fill_arrays<<grid,block>>(dev_cube_wi_array, dev_cube_w_array,dev_cube_wi, dev_cube_w,dimensions_down);
 
 	//struct cudaChannelFormatDesc descr = cudaCreateChannelDesc((int)dimensions_down.x, (int)dimensions_down.y, (int)dimensions_down.z, cudaChannelFormatKindFloat);
-	const textureReference * wi_tex_ref;
-	const textureReference * w_tex_ref;
-	cudaGetTextureReference(&wi_tex_ref, "wi_tex");	
-	cudaGetTextureReference(&w_tex_ref, "w_tex");	
- 	cudaBindTextureToArray(wi_tex_ref, dev_cube_wi_array, &channelFloat);//, cudaChannelFormatKindFloat); 	
+	const struct textureReference * wi_tex_ref;
+	const struct textureReference * w_tex_ref;
+	
+#if CUDA_VERSION < 5000 /* 5.0 */
+	cudaStatus = cudaGetTextureReference(&wi_tex_ref, "wi_tex");
+	cudaGetTextureReference(&w_tex_ref, "w_tex");
+#else
+	cudaStatus = cudaGetTextureReference(&wi_tex_ref, &wi_tex);
+	cudaGetTextureReference(&w_tex_ref, &w_tex);
+#endif
+	wi_tex.filterMode = cudaFilterModeLinear;      // linear interpolation
+	wi_tex.addressMode[0] = cudaAddressModeMirror; //cudaAddressModeClamp
+	wi_tex.addressMode[1] = cudaAddressModeMirror;
+	wi_tex.addressMode[2] = cudaAddressModeMirror;
+	w_tex.filterMode = cudaFilterModeLinear;      // linear interpolation
+	w_tex.addressMode[0] = cudaAddressModeMirror;
+	w_tex.addressMode[1] = cudaAddressModeMirror;
+	w_tex.addressMode[2] = cudaAddressModeMirror;
+	
+	if (cudaStatus != cudaSuccess) {
+		std::cout << "error on gettexref " << cudaGetErrorString(cudaStatus) << std::endl;
+	}
+		
+	cudaStatus = cudaBindTextureToArray(wi_tex_ref, dev_cube_wi_array, &channelFloat);//, cudaChannelFormatKindFloat); 	
 	cudaBindTextureToArray(w_tex_ref, dev_cube_w_array, &channelFloat);//, cudaChannelFormatKindFloat);
 	
+	if (cudaStatus != cudaSuccess) {
+		std::cout << "error on bind text " << cudaGetErrorString(cudaStatus) << std::endl;
+	}
+	
+	const dim3 block2(16, 16);
+
+
+	const dim3 grid2(((imsize.x + block2.x - 1) / block2.x), ((imsize.y + block2.y - 1) / block2.y));
+	
+	slicing <<< grid2, block2 >>> (dev_image, imsize, scale_xy, scale_eps);
 	
 	cudaEvent_t start, stop;
 	float time;

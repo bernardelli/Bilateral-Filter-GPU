@@ -33,20 +33,20 @@ int main(int argc, char **argv)
 	/********************************************************************************
 	*** define scalling                                               ***
 	********************************************************************************/
-	int scale_xy = 10;
-	int scale_eps = 10;
+	int scale_xy = 5;
+	int scale_eps = 5;
 
 	
 	/********************************************************************************
 	*** define kernel                                                             ***
 	********************************************************************************/
-	float sigma_xy = 3;
-	kernel_xy_size = 7;
+	float sigma_xy = 33.0 / scale_xy;
+	kernel_xy_size = 71;
 	kernel_xy = (float*)malloc(kernel_xy_size*sizeof(float));
 	define_kernel(kernel_xy, sigma_xy, kernel_xy_size);
 
-	float sigma_eps = 10;
-	kernel_eps_size = 21;
+	float sigma_eps = 33.0 / scale_eps;
+	kernel_eps_size = 71;
 	kernel_eps = (float*)malloc(kernel_eps_size*sizeof(float));
 	define_kernel(kernel_eps, sigma_eps, kernel_eps_size);
 
@@ -71,11 +71,11 @@ int main(int argc, char **argv)
 	image.convertTo(image, CV_32F);
 	image_size = image.rows*image.cols;
 	size = image_size * 256;
-	image_size_down = ceil(image.rows/scale_xy)*ceil(image.cols/scale_xy);
+	image_size_down = ceil((float)image.rows / (float)scale_xy)*ceil((float)image.cols / (float)scale_xy);
 
-	size_down = image_size_down*ceil(256/scale_eps);
+	size_down = image_size_down*ceil((float)256/scale_eps);
 	dim3 dimensions = dim3(image.rows, image.cols, 256);
-	dim3 dimensions_down = dim3(ceil(image.rows/scale_xy), ceil(image.cols/scale_xy), ceil(256/scale_eps));
+	dim3 dimensions_down = dim3(ceil((float)image.rows / (float)scale_xy), ceil((float)image.cols / (float)scale_xy), ceil((float)256 / (float)scale_eps));
 
 	
 	
@@ -136,12 +136,6 @@ int main(int argc, char **argv)
 	float convolution_time = callingConvolution_shared(dev_cube_wi_out, dev_cube_w_out, dev_cube_wi, dev_cube_w, dev_kernel_xy, kernel_xy_size, dev_kernel_eps, kernel_eps_size, dimensions_down, device);
     std::cout << "Convolution ok with time = " << convolution_time << " ms" << std::endl;
 
-	
-	/********************************************************************************
-	*** Upsample cubes with texture                                          ***
-	********************************************************************************/
-	// dev_cube_wi_out, dev_cube_w_out >>> dev_cube_wi_uplsampled, dev_cube_w_uplsampled
-	//upsample(dev_cube_wi_uplsampled, dev_cube_w_uplsampled, dev_cube_wi_out, dev_cube_w_out , dimensions, scale_xy, scale_eps, dimensions_down);
 	/********************************************************************************
 	*** start slicing on gpu                                                      ***
 	********************************************************************************/
