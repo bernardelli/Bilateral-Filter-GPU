@@ -156,14 +156,12 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <CudaCompile Include="convolution.cu" />
     <CudaCompile Include="convolution_shared.cu" />
     <CudaCompile Include="cubefilling.cu" />
     <CudaCompile Include="little_cuda_functions.cu" />
     <CudaCompile Include="slicing.cu" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="convolution.h" />
     <ClInclude Include="convolution_shared.h" />
     <ClInclude Include="cubefilling.cuh" />
     <ClInclude Include="include_file.h" />

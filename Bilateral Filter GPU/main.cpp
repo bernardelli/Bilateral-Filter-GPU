@@ -1,4 +1,4 @@
-#include "include_file.h"
+﻿#include "include_file.h"
 
 
 #include "slicing.h"
@@ -40,16 +40,18 @@ int main(int argc, char **argv)
 	/********************************************************************************
 	*** define kernel                                                             ***
 	********************************************************************************/
-	float sigma_xy = 33.0 / scale_xy;
-	kernel_xy_size = 71;
+	float sigma_xy = 16.0 / scale_xy;
+	kernel_xy_size = 16;
 	kernel_xy = (float*)malloc(kernel_xy_size*sizeof(float));
 	define_kernel(kernel_xy, sigma_xy, kernel_xy_size);
 
-	float sigma_eps = 33.0 / scale_eps;
-	kernel_eps_size = 71;
+	float sigma_eps = 25.0 / scale_eps;
+	kernel_eps_size = 23;
 	kernel_eps = (float*)malloc(kernel_eps_size*sizeof(float));
 	define_kernel(kernel_eps, sigma_eps, kernel_eps_size);
-
+	/*Article:
+	A consistent approximation is a sampling rate proportional to the Gaussian bandwidth (i.e. ss
+	ss/sigmas ≈ sr /sigmar) to achieve similar accuracy on the whole SxR domain.*/
 
 	/********************************************************************************
 	*** loading image and display it on desktop                                   ***

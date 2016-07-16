@@ -1,7 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <CudaCompile Include="convolution.cu" />
     <CudaCompile Include="little_cuda_functions.cu" />
     <CudaCompile Include="slicing.cu" />
     <CudaCompile Include="cubefilling.cu" />
@@ -25,7 +24,6 @@
     <ClInclude Include="include_file.h" />
     <ClInclude Include="little_cuda_functions.h" />
     <ClInclude Include="slicing.h" />
-    <ClInclude Include="convolution.h" />
     <ClInclude Include="cubefilling.cuh" />
     <ClInclude Include="convolution_shared.h" />
   </ItemGroup>
