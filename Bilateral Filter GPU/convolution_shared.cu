@@ -5,6 +5,11 @@ __global__ void convolution_shared_row(float *output, const float *input, const 
 	const int ix = blockDim.x*blockIdx.x + threadIdx.x;
 	const int iy = blockDim.y*blockIdx.y + threadIdx.y;
 	const int iz = blockIdx.z;
+	if (ix >= imsize.x || iy >= imsize.y || iz >= imsize.z)
+	{
+		return;
+	}
+	
 	const int cube_idx = ix + iy*imsize.x + iz*imsize.x*imsize.y;
 
 	const int radius_size = kernel_size / 2;
@@ -48,7 +53,10 @@ __global__ void convolution_shared_col(float *output, const float *input, const 
 	const int iy = blockDim.y*blockIdx.y + threadIdx.y;
 	const int iz = blockIdx.z;
 	const int cube_idx = ix + iy*imsize.x + iz*imsize.x*imsize.y;
-
+	if (ix >= imsize.x || iy >= imsize.y || iz >= imsize.z)
+	{
+		return;
+	}
 	const int radius_size = kernel_size / 2;
 
 	extern __shared__ float s_image__[]; //size is on kernel call, (block_dim_x + 2 * k_radius_xy)*block_dim_y
@@ -85,6 +93,10 @@ __global__ void convolution_shared_eps(float *output, const float *input, const 
 	const int iz = blockDim.x*blockIdx.x + threadIdx.x;
 	const int ix = blockDim.y*blockIdx.y + threadIdx.y;
 	const int iy = blockIdx.z;
+	if (ix >= imsize.x || iy >= imsize.y || iz >= imsize.z)
+	{
+		return;
+	}
 	const int cube_idx = ix + iy*imsize.x + iz*imsize.x*imsize.y;
 
 	const int radius_size = kernel_size / 2;
