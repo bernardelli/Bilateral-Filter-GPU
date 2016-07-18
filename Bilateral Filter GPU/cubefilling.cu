@@ -30,7 +30,7 @@ __global__ void cubefilling(const float* image, float *dev_cube_wi, float *dev_c
 				
 					float k = image[i_idx + image_size.x*j_idx];
 					size_t cube_idx_2 = cube_idx_1 + dimensions_down.x*dimensions_down.y*floorf(k / (float)scale_eps);
-					dev_cube_wi[cube_idx_2] += ((float)k);
+					dev_cube_wi[cube_idx_2] += ((float)k)/256;
 					dev_cube_w[cube_idx_2] += 1.0;
 				}
 

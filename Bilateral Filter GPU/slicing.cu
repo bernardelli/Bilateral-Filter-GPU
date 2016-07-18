@@ -13,49 +13,10 @@ __global__ void slicing( float *dev_image, const dim3 imsize, int scale_xy, int 
 	{
 
 		float k = dev_image[i + imsize.x*j];
-		//printf("value = %d, i = %d, j = %d\n", value, i, j);
 
 
-		//Old try on performing trilinear interpolation
-		/*float interpolate_wi0[2][2][2];
-		float interpolate_w0[2][2][2];
-		
-		for( int ii = 0; ii <2; ii++)  {
-			int i_idx = floorf(i / scale_xy) + ii;
-			for (int jj = 0; jj <2; jj++)  { 
-				int j_idx = floorf(j / scale_xy) + jj;
-				for (int kk = 0; kk <2; k++)  { 
-					int k_idx = floorf(k / scale_eps) + kk;
-					int cube_idx = i_idx + dimensions_down.x*j_idx + dimensions_down.x*dimensions_down.y*k_idx;
-					interpolate_wi0[ii][jj][kk] = dev_cube_wi[cube_idx];
-					interpolate_w0[ii][jj][kk] = dev_cube_w[cube_idx];
-				}
-			}
-		}
-		float interpolate_wi1[2][2];
-		float interpolate_w1[2][2];
-		for( int ii = 0; ii <2; ii++)  {
-			for (int jj = 0; jj <2; jj++)  { 
-				float k_rest = (k/ scale_eps) - floorf(k/ scale_eps);
-				interpolate_wi1[ii][jj] = (1.0-k_rest)*interpolate_wi0[ii][jj][0] + k_rest*interpolate_wi0[ii][jj][1];
-				interpolate_w1[ii][jj] = (1.0-k_rest)*interpolate_w0[ii][jj][0] + k_rest*interpolate_w0[ii][jj][1];
-			}
-		}
-
-		float interpolate_wi2[2];
-		float interpolate_w2[2];
-		for( int ii = 0; ii <2; ii++)  {
-			float j_rest = (j/ scale_xy) - floorf(j/ scale_xy);
-
-			interpolate_wi2[ii] = (1.0-j_rest)*interpolate_wi1[ii][0] + j_rest*interpolate_wi1[ii][1];
-			interpolate_w2[ii] = (1.0-j_rest)*interpolate_w1[ii][0] + j_rest*interpolate_w1[ii][1];
-			
-		}
-		float i_rest = (i/ scale_xy) - floorf(i/ scale_xy);*/
-
-
-		//dev_image[j + imsize.y*i] = ((1.0-i_rest)*interpolate_wi2[0] + i_rest*interpolate_wi2[1])/((1.0-i_rest)*interpolate_w2[0] + i_rest*interpolate_w2[1]);
-		dev_image[i + imsize.x*j] = tex3D(wi_tex, 0.5f + (float)i / (float)scale_xy, 0.5f + (float)j / (float)scale_xy, 0.5f + (float)k / (float)scale_eps) / tex3D(w_tex, 0.5f + (float)i / (float)scale_xy, 0.5f + (float)j / (float)scale_xy, 0.5f + (float)k / (float)scale_eps);
+		dev_image[i + imsize.x*j] = 256*tex3D(wi_tex, 0.5f + (float)i / (float)scale_xy, 0.5f + (float)j / (float)scale_xy, 0.5f + (float)k / (float)scale_eps) 
+									/ tex3D(w_tex, 0.5f + (float)i / (float)scale_xy, 0.5f + (float)j / (float)scale_xy, 0.5f + (float)k / (float)scale_eps);
 		
 	}
 

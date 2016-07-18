@@ -33,20 +33,20 @@ int main(int argc, char **argv)
 	/********************************************************************************
 	*** define scalling                                               ***
 	********************************************************************************/
-	int scale_xy = 10;
-	int scale_eps = 10;
+	int scale_xy = 8;
+	int scale_eps = 8;
 
 	
 	/********************************************************************************
 	*** define kernel                                                             ***
 	********************************************************************************/
-	float sigma_xy = 5.0 / scale_xy;
-	kernel_xy_size = 15;
+	float sigma_xy = 25.0f / scale_xy;
+	kernel_xy_size = 3;
 	kernel_xy = (float*)malloc(kernel_xy_size*sizeof(float));
 	define_kernel(kernel_xy, sigma_xy, kernel_xy_size);
 
-	float sigma_eps = 5.0 / scale_eps;
-	kernel_eps_size = 15;
+	float sigma_eps = 25.0f / scale_eps;
+	kernel_eps_size = 9;
 	kernel_eps = (float*)malloc(kernel_eps_size*sizeof(float));
 	define_kernel(kernel_eps, sigma_eps, kernel_eps_size);
 	/*Article:
@@ -73,11 +73,11 @@ int main(int argc, char **argv)
 	image.convertTo(image, CV_32F);
 	image_size = image.rows*image.cols;
 	size = image_size * 256;
-	image_size_down = ceil((float)image.rows / (float)scale_xy)*ceil((float)image.cols / (float)scale_xy);
+	image_size_down = floor((float)image.rows / (float)scale_xy)*floor((float)image.cols / (float)scale_xy);
 
-	size_down = image_size_down*ceil((float)256/scale_eps);
+	size_down = image_size_down*floor((float)256 / (float)scale_eps);
 	dim3 dimensions = dim3(image.rows, image.cols, 256);
-	dim3 dimensions_down = dim3(ceil((float)image.rows / (float)scale_xy), ceil((float)image.cols / (float)scale_xy), ceil((float)256 / (float)scale_eps));
+	dim3 dimensions_down = dim3(floor((float)image.rows / (float)scale_xy), floor((float)image.cols / (float)scale_xy), floor((float)256 / (float)scale_eps));
 
 	
 	
@@ -199,6 +199,6 @@ int main(int argc, char **argv)
 
 void define_kernel(float* output_kernel, float sigma, int size) {
 	for (int i = 0; i < size; i++) {
-		output_kernel[i] = expf(-0.5*powf((size / 2 - i) / sigma, 2));
+		output_kernel[i] = 100.0f*expf(-0.5*powf((size / 2 - i) / sigma, 2));
 	}
 }

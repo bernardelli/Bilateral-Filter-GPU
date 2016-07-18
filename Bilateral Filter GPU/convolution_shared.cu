@@ -5,10 +5,7 @@ __global__ void convolution_shared_row(float *output, const float *input, const 
 	const int ix = blockDim.x*blockIdx.x + threadIdx.x;
 	const int iy = blockDim.y*blockIdx.y + threadIdx.y;
 	const int iz = blockIdx.z;
-	if (ix >= imsize.x || iy >= imsize.y || iz >= imsize.z)
-	{
-		return;
-	}
+
 	
 	const int cube_idx = ix + iy*imsize.x + iz*imsize.x*imsize.y;
 
@@ -19,18 +16,17 @@ __global__ void convolution_shared_row(float *output, const float *input, const 
 	const int s_ix = radius_size + threadIdx.x;
 	const int s_iy = threadIdx.y;
 
-	float temp  = input[cube_idx];
-	s_image[s_ix + s_iy*s_dim_x] = temp;
-	
 	if (threadIdx.x < radius_size) //is on the left part of the shared memory!
 	{
-		s_image[s_ix - radius_size + s_iy*s_dim_x] = 0.0;
+		s_image[s_ix - radius_size + s_iy*s_dim_x] = 0.0f;
 	}
-	else if (threadIdx.x >(blockDim.x - radius_size))
+	if (threadIdx.x >(blockDim.x - radius_size))
 	{
-		s_image[s_ix + radius_size + s_iy*s_dim_x] = 0.0;
+		s_image[s_ix + radius_size + s_iy*s_dim_x] = 0.0f;
 	}
-		
+
+	s_image[s_ix + s_iy*s_dim_x] = (ix >= imsize.x || iy >= imsize.y || iz >= imsize.z) ? 0.0f : input[cube_idx];
+	
 	__syncthreads();
 	float result = 0.0;
 
@@ -39,8 +35,13 @@ __global__ void convolution_shared_row(float *output, const float *input, const 
 	{
 		result += kernel[i] * s_image[s_ix - i + radius_size + s_iy*s_dim_x];
 	}
-	
-	output[cube_idx] = result;
+
+	if (ix <imsize.x && iy < imsize.y && iz < imsize.z)
+	{
+
+		output[cube_idx] = result;
+	}
+
 
 	//if (result > 0 )
 	//	printf("%.01f \n", result);
@@ -53,10 +54,7 @@ __global__ void convolution_shared_col(float *output, const float *input, const 
 	const int iy = blockDim.y*blockIdx.y + threadIdx.y;
 	const int iz = blockIdx.z;
 	const int cube_idx = ix + iy*imsize.x + iz*imsize.x*imsize.y;
-	if (ix >= imsize.x || iy >= imsize.y || iz >= imsize.z)
-	{
-		return;
-	}
+
 	const int radius_size = kernel_size / 2;
 
 	extern __shared__ float s_image__[]; //size is on kernel call, (block_dim_x + 2 * k_radius_xy)*block_dim_y
@@ -64,16 +62,17 @@ __global__ void convolution_shared_col(float *output, const float *input, const 
 	const int s_ix = threadIdx.x;
 	const int s_iy = radius_size + threadIdx.y;
 
-	s_image__[s_ix + s_iy*s_dim_x] = input[cube_idx];
-
 	if (threadIdx.y < radius_size) //is on the left part of the shared memory!
 	{
 		s_image__[s_ix + (s_iy - radius_size)*s_dim_x] = 0.0;
 	}
-	else if (threadIdx.y >(blockDim.y - radius_size))
+	if (threadIdx.y >(blockDim.y - radius_size))
 	{
 		s_image__[s_ix + (s_iy + radius_size)*s_dim_x] = 0.0;
 	}
+	s_image__[s_ix + s_iy*s_dim_x] = (ix >= imsize.x || iy >= imsize.y || iz >= imsize.z) ? 0.0f : input[cube_idx];
+
+
 	__syncthreads();
 
 	float result = 0.0;
@@ -83,8 +82,12 @@ __global__ void convolution_shared_col(float *output, const float *input, const 
 	{
 		result += kernel[i] * s_image__[s_ix + (s_iy - i + radius_size)*s_dim_x];
 	}
+	if (ix <imsize.x && iy < imsize.y && iz < imsize.z)
+	{
 
-	output[cube_idx] = result;
+		output[cube_idx] = result;
+	}
+
 }
 
 
@@ -93,10 +96,7 @@ __global__ void convolution_shared_eps(float *output, const float *input, const 
 	const int iz = blockDim.x*blockIdx.x + threadIdx.x;
 	const int ix = blockDim.y*blockIdx.y + threadIdx.y;
 	const int iy = blockIdx.z;
-	if (ix >= imsize.x || iy >= imsize.y || iz >= imsize.z)
-	{
-		return;
-	}
+	
 	const int cube_idx = ix + iy*imsize.x + iz*imsize.x*imsize.y;
 
 	const int radius_size = kernel_size / 2;
@@ -106,16 +106,18 @@ __global__ void convolution_shared_eps(float *output, const float *input, const 
 	const int s_ix = radius_size + threadIdx.x;
 	const int s_iy = threadIdx.y;
 
-	s_image_[s_ix + s_iy*s_dim_x] = input[cube_idx];
-
 	if (threadIdx.x < radius_size) //is on the left part of the shared memory!
 	{
 		s_image_[s_ix - radius_size + s_iy*s_dim_x] = 0.0;
 	}
-	else if (threadIdx.x >(blockDim.x - radius_size))
+	if (threadIdx.x >(blockDim.x - radius_size))
 	{
 		s_image_[s_ix + radius_size + s_iy*s_dim_x] = 0.0;
 	}
+	s_image_[s_ix + s_iy*s_dim_x] = (ix >= imsize.x || iy >= imsize.y || iz >= imsize.z) ? 0.0f : input[cube_idx];
+
+
+
 	__syncthreads();
 
 	float result = 0.0;
@@ -125,8 +127,12 @@ __global__ void convolution_shared_eps(float *output, const float *input, const 
 	{
 		result += kernel[i] * s_image_[s_ix - i + radius_size + s_iy*s_dim_x];
 	}
+	if (ix <imsize.x && iy < imsize.y && iz < imsize.z)
+	{
 
-	output[cube_idx] = result;
+		output[cube_idx] = result;
+	}
+	
 
 	//if (result > 0 )
 		//printf("%.01f \n", result);
