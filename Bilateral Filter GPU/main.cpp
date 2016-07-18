@@ -33,20 +33,20 @@ int main(int argc, char **argv)
 	/********************************************************************************
 	*** define scalling                                               ***
 	********************************************************************************/
-	int scale_xy = 5;
-	int scale_eps = 5;
+	int scale_xy = 8;
+	int scale_eps = 4;
 
 	
 	/********************************************************************************
 	*** define kernel                                                             ***
 	********************************************************************************/
-	float sigma_xy = 16.0 / scale_xy;
-	kernel_xy_size = 16;
+	float sigma_xy = 5.0 / scale_xy;
+	kernel_xy_size = 15;
 	kernel_xy = (float*)malloc(kernel_xy_size*sizeof(float));
 	define_kernel(kernel_xy, sigma_xy, kernel_xy_size);
 
-	float sigma_eps = 25.0 / scale_eps;
-	kernel_eps_size = 23;
+	float sigma_eps = 5.0 / scale_eps;
+	kernel_eps_size = 15;
 	kernel_eps = (float*)malloc(kernel_eps_size*sizeof(float));
 	define_kernel(kernel_eps, sigma_eps, kernel_eps_size);
 	/*Article:

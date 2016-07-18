@@ -12,13 +12,33 @@ __global__ void cubefilling(const float* image, float *dev_cube_wi, float *dev_c
 {
 	unsigned int i = blockIdx.x * blockDim.x + threadIdx.x;
 	unsigned int j = blockIdx.y * blockDim.y + threadIdx.y;
-	if (i < image_size.x && j < image_size.y) {
+	if (i < dimensions_down.x && j < dimensions_down.y) {
 		
-		float k = image[j + image_size.y*i];
-		unsigned int cube_idx = floorf((float)i / (float)scale_xy) + dimensions_down.x*floorf((float)j / (float)scale_xy) + dimensions_down.x*dimensions_down.y*floorf((float)k / (float)scale_eps);
 		
-		atomicAdd(&dev_cube_wi[cube_idx], k);
-		atomicAdd(&dev_cube_w[cube_idx], 1.0);
+		//unsigned int cube_idx = floorf((float)i / (float)scale_xy) + dimensions_down.x*floorf((float)j / (float)scale_xy) + dimensions_down.x*dimensions_down.y*floorf((float)k / (float)scale_eps);
+		size_t cube_idx_1 = i + dimensions_down.x*j;
+#pragma unroll
+		for (int ii = 0; ii < scale_xy; ii++)
+		{
+	#pragma unroll
+			for (int jj = 0; jj < scale_xy; jj++)
+			{
+				size_t i_idx = scale_xy*i + ii;
+				size_t j_idx = scale_xy*j + jj;
+				if (i_idx < image_size.x && j_idx < image_size.y)
+				{
+				
+					float k = image[i_idx + image_size.x*j_idx];
+					size_t cube_idx_2 = cube_idx_1 + dimensions_down.x*dimensions_down.y*floorf(k / (float)scale_eps);
+					dev_cube_wi[cube_idx_2] += ((float)k);
+					dev_cube_w[cube_idx_2] += 1.0;
+				}
+
+			}
+		}
+
+		//atomicAdd(&dev_cube_wi[cube_idx], k);
+		//atomicAdd(&dev_cube_w[cube_idx], 1.0);
 		//dev_cube_wi[cube_idx] += ((float)k);
 
 		//dev_cube_w[cube_idx] += 1.0;
@@ -48,11 +68,11 @@ float callingCubefilling(const float* dev_image, float *dev_cube_wi, float *dev_
 
 	
 	dim3 dimBlock(16, 16);
-	dim3 dimGrid((image_size.x + dimBlock.x - 1) / dimBlock.x,
-		(image_size.y + dimBlock.y - 1) / dimBlock.y);
+	dim3 dimGrid((dimensions_down.x + dimBlock.x - 1) / dimBlock.x,
+		(dimensions_down.y + dimBlock.y - 1) / dimBlock.y);
 
-	//cudaMemset(dev_cube_wi, 0, image_size.x*image_size.y*image_size.z*sizeof(float)); //seems to be useless
-	//cudaMemset(dev_cube_w, 0, image_size.x*image_size.y*image_size.z*sizeof(float));
+	cudaMemset(dev_cube_wi, 0, dimensions_down.x*dimensions_down.y*dimensions_down.z*sizeof(float)); //seems to be useless
+	cudaMemset(dev_cube_w, 0, dimensions_down.x*dimensions_down.y*dimensions_down.z*sizeof(float));
 	
 	cudaEvent_t start, stop;
 	float time;

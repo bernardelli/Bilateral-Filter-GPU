@@ -55,7 +55,7 @@ __global__ void slicing( float *dev_image, const dim3 imsize, int scale_xy, int 
 
 
 		//dev_image[j + imsize.y*i] = ((1.0-i_rest)*interpolate_wi2[0] + i_rest*interpolate_wi2[1])/((1.0-i_rest)*interpolate_w2[0] + i_rest*interpolate_w2[1]);
-		dev_image[i + imsize.x*j] = tex3D(wi_tex, 0.5 + (float)i / (float)scale_xy, 0.5 + (float)j / (float)scale_xy, 0.5 + (float)k / (float)scale_eps) / tex3D(w_tex, 0.5 + (float)i / (float)scale_xy, 0.5 + (float)j / (float)scale_xy, 0.5 + (float)k / (float)scale_eps);
+		dev_image[i + imsize.x*j] = tex3D(wi_tex, 0.5f + (float)i / (float)scale_xy, 0.5f + (float)j / (float)scale_xy, 0.5f + (float)k / (float)scale_eps) / tex3D(w_tex, 0.5f + (float)i / (float)scale_xy, 0.5f + (float)j / (float)scale_xy, 0.5f + (float)k / (float)scale_eps);
 		
 	}
 
@@ -78,7 +78,14 @@ float callingSlicing(float* dev_image, const float *dev_cube_wi, const float *de
 {
 	int slicing_status = 0;
 	const dim3 block2(16, 16);
-	
+	wi_tex.filterMode = cudaFilterModeLinear;      // linear interpolation
+	wi_tex.addressMode[0] = cudaAddressModeClamp; //cudaAddressModeClamp
+	wi_tex.addressMode[1] = cudaAddressModeClamp;
+	wi_tex.addressMode[2] = cudaAddressModeClamp;
+	w_tex.filterMode = cudaFilterModeLinear;      // linear interpolation
+	w_tex.addressMode[0] = cudaAddressModeClamp;
+	w_tex.addressMode[1] = cudaAddressModeClamp;
+	w_tex.addressMode[2] = cudaAddressModeClamp;
 	cudaExtent extent1 = make_cudaExtent( dimensions_down.x*sizeof(float), dimensions_down.y, dimensions_down.z); 
 	cudaExtent extent2 = make_cudaExtent( dimensions_down.x, dimensions_down.y, dimensions_down.z); 
 	cudaArray *dev_cube_wi_array, *dev_cube_w_array;
@@ -130,14 +137,7 @@ float callingSlicing(float* dev_image, const float *dev_cube_wi, const float *de
 	cudaStatus = cudaGetTextureReference(&wi_tex_ref, &wi_tex);
 	cudaGetTextureReference(&w_tex_ref, &w_tex);
 #endif
-	wi_tex.filterMode = cudaFilterModeLinear;      // linear interpolation
-	wi_tex.addressMode[0] = cudaAddressModeMirror; //cudaAddressModeClamp
-	wi_tex.addressMode[1] = cudaAddressModeMirror;
-	wi_tex.addressMode[2] = cudaAddressModeMirror;
-	w_tex.filterMode = cudaFilterModeLinear;      // linear interpolation
-	w_tex.addressMode[0] = cudaAddressModeMirror;
-	w_tex.addressMode[1] = cudaAddressModeMirror;
-	w_tex.addressMode[2] = cudaAddressModeMirror;
+
 	
 	if (cudaStatus != cudaSuccess) {
 		std::cout << "error on gettexref " << cudaGetErrorString(cudaStatus) << std::endl;
