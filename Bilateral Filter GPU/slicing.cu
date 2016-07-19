@@ -14,9 +14,11 @@ __global__ void slicing( float *dev_image, const dim3 imsize, int scale_xy, int 
 
 		float k = dev_image[i + imsize.x*j];
 
+		float x = 0.5f + (float)i / (float)scale_xy;
+		float y = 0.5f + (float)j / (float)scale_xy;
+		float z = 0.5f + (float)k / (float)scale_eps;
 
-		dev_image[i + imsize.x*j] = 256*tex3D(wi_tex, 0.5f + (float)i / (float)scale_xy, 0.5f + (float)j / (float)scale_xy, 0.5f + (float)k / (float)scale_eps) 
-									/ tex3D(w_tex, 0.5f + (float)i / (float)scale_xy, 0.5f + (float)j / (float)scale_xy, 0.5f + (float)k / (float)scale_eps);
+		dev_image[i + imsize.x*j] = 256*tex3D(wi_tex, x, y, z) / tex3D(w_tex, x, y, z);
 		
 	}
 

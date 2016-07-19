@@ -41,12 +41,12 @@ int main(int argc, char **argv)
 	*** define kernel                                                             ***
 	********************************************************************************/
 	float sigma_xy = 25.0f / scale_xy;
-	kernel_xy_size = 3;
+	kernel_xy_size = 11;
 	kernel_xy = (float*)malloc(kernel_xy_size*sizeof(float));
 	define_kernel(kernel_xy, sigma_xy, kernel_xy_size);
 
 	float sigma_eps = 25.0f / scale_eps;
-	kernel_eps_size = 9;
+	kernel_eps_size = 11;
 	kernel_eps = (float*)malloc(kernel_eps_size*sizeof(float));
 	define_kernel(kernel_eps, sigma_eps, kernel_eps_size);
 	/*Article:

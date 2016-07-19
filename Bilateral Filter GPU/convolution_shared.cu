@@ -2,25 +2,25 @@
 
 __global__ void convolution_shared_row(float *output, const float *input, const float *kernel, const int kernel_size, const dim3 imsize)
 {	
-	const int ix = blockDim.x*blockIdx.x + threadIdx.x;
-	const int iy = blockDim.y*blockIdx.y + threadIdx.y;
-	const int iz = blockIdx.z;
+	const size_t ix = blockDim.x*blockIdx.x + threadIdx.x;
+	const size_t iy = blockDim.y*blockIdx.y + threadIdx.y;
+	const size_t iz = blockIdx.z;
 
 	
-	const int cube_idx = ix + iy*imsize.x + iz*imsize.x*imsize.y;
+	const size_t cube_idx = ix + iy*imsize.x + iz*imsize.x*imsize.y;
 
-	const int radius_size = kernel_size / 2;
+	const size_t radius_size = kernel_size / 2;
 
 	extern __shared__ float s_image[]; //size is on kernel call, (block_dim_x + 2 * k_radius_xy)*block_dim_y
-	const int s_dim_x = blockDim.x + 2 * radius_size;
-	const int s_ix = radius_size + threadIdx.x;
-	const int s_iy = threadIdx.y;
+	const size_t s_dim_x = blockDim.x + 2 * radius_size;
+	const size_t s_ix = radius_size + threadIdx.x;
+	const size_t s_iy = threadIdx.y;
 
 	if (threadIdx.x < radius_size) //is on the left part of the shared memory!
 	{
 		s_image[s_ix - radius_size + s_iy*s_dim_x] = 0.0f;
 	}
-	if (threadIdx.x >(blockDim.x - radius_size))
+	if (threadIdx.x >=(blockDim.x - radius_size))
 	{
 		s_image[s_ix + radius_size + s_iy*s_dim_x] = 0.0f;
 	}
@@ -50,23 +50,23 @@ __global__ void convolution_shared_row(float *output, const float *input, const 
 
 __global__ void convolution_shared_col(float *output, const float *input, const float *kernel, const int kernel_size, const dim3 imsize)
 {
-	const int ix = blockDim.x*blockIdx.x + threadIdx.x;
-	const int iy = blockDim.y*blockIdx.y + threadIdx.y;
-	const int iz = blockIdx.z;
-	const int cube_idx = ix + iy*imsize.x + iz*imsize.x*imsize.y;
+	const size_t ix = blockDim.x*blockIdx.x + threadIdx.x;
+	const size_t iy = blockDim.y*blockIdx.y + threadIdx.y;
+	const size_t iz = blockIdx.z;
+	const size_t cube_idx = ix + iy*imsize.x + iz*imsize.x*imsize.y;
 
-	const int radius_size = kernel_size / 2;
+	const size_t radius_size = kernel_size / 2;
 
 	extern __shared__ float s_image__[]; //size is on kernel call, (block_dim_x + 2 * k_radius_xy)*block_dim_y
-	const int s_dim_x = blockDim.x;
-	const int s_ix = threadIdx.x;
-	const int s_iy = radius_size + threadIdx.y;
+	const size_t s_dim_x = blockDim.x; //4
+	const size_t s_ix = threadIdx.x;
+	const size_t s_iy = radius_size + threadIdx.y;
 
 	if (threadIdx.y < radius_size) //is on the left part of the shared memory!
 	{
 		s_image__[s_ix + (s_iy - radius_size)*s_dim_x] = 0.0;
 	}
-	if (threadIdx.y >(blockDim.y - radius_size))
+	if (threadIdx.y >=(blockDim.y - radius_size))
 	{
 		s_image__[s_ix + (s_iy + radius_size)*s_dim_x] = 0.0;
 	}
@@ -93,24 +93,24 @@ __global__ void convolution_shared_col(float *output, const float *input, const 
 
 __global__ void convolution_shared_eps(float *output, const float *input, const float *kernel, const int kernel_size, const dim3 imsize)
 {
-	const int iz = blockDim.x*blockIdx.x + threadIdx.x;
-	const int ix = blockDim.y*blockIdx.y + threadIdx.y;
-	const int iy = blockIdx.z;
+	const size_t iz = blockDim.x*blockIdx.x + threadIdx.x;
+	const size_t ix = blockDim.y*blockIdx.y + threadIdx.y;
+	const size_t iy = blockIdx.z;
 	
-	const int cube_idx = ix + iy*imsize.x + iz*imsize.x*imsize.y;
+	const size_t cube_idx = ix + iy*imsize.x + iz*imsize.x*imsize.y;
 
-	const int radius_size = kernel_size / 2;
+	const size_t radius_size = kernel_size / 2;
 
 	extern __shared__ float s_image_[]; //size is on kernel call, (block_dim_x + 2 * k_radius_xy)*block_dim_y
-	const int s_dim_x = blockDim.x + 2 * radius_size;
-	const int s_ix = radius_size + threadIdx.x;
-	const int s_iy = threadIdx.y;
+	const size_t s_dim_x = blockDim.x + 2 * radius_size;
+	const size_t s_ix = radius_size + threadIdx.x;
+	const size_t s_iy = threadIdx.y;
 
 	if (threadIdx.x < radius_size) //is on the left part of the shared memory!
 	{
 		s_image_[s_ix - radius_size + s_iy*s_dim_x] = 0.0;
 	}
-	if (threadIdx.x >(blockDim.x - radius_size))
+	if (threadIdx.x >=(blockDim.x - radius_size))
 	{
 		s_image_[s_ix + radius_size + s_iy*s_dim_x] = 0.0;
 	}
@@ -165,6 +165,9 @@ float callingConvolution_shared(float *dev_cube_wi_out, float *dev_cube_w_out, f
 	{
 		block_dim_y = deviceProp.maxThreadsPerBlock / block_dim_x;
 	}
+	if (block_dim_y > image_dimensions.y) {
+		block_dim_y = image_dimensions.y;
+	}
 	
 	int shared_memory_size = sizeof(float)*(block_dim_x + 2 * k_radius_xy)*block_dim_y;
 
@@ -212,6 +215,10 @@ float callingConvolution_shared(float *dev_cube_wi_out, float *dev_cube_w_out, f
 		block_dim_x = deviceProp.maxThreadsPerBlock / block_dim_y;
 	}
 
+	if (block_dim_x > image_dimensions.x) {
+		block_dim_x = image_dimensions.x;
+	}
+
 	shared_memory_size = sizeof(float)*block_dim_x*(block_dim_y + 2 * k_radius_xy);
 
 
@@ -257,6 +264,9 @@ float callingConvolution_shared(float *dev_cube_wi_out, float *dev_cube_w_out, f
 	if (block_dim_eps*block_dim_x > deviceProp.maxThreadsPerBlock)
 	{
 		block_dim_x = deviceProp.maxThreadsPerBlock / block_dim_eps;
+	}
+	if (block_dim_x > image_dimensions.x) {
+		block_dim_x = image_dimensions.x;
 	}
 
 	shared_memory_size = sizeof(float)*(block_dim_eps + 2 * k_radius_eps)*(block_dim_x);
