@@ -77,16 +77,16 @@ int main(int argc, char **argv)
 			size = image_size * 256;
 			
 			// resizing scale_xy
-			for (int scale_xy = 1; scale_xy < 50; scale_xy += 5){
+			for (int scale_xy = 1; scale_xy < 40; scale_xy += 5){
 				
 				// resizing scale_eps
-				for (int scale_eps = 1; scale_eps < 50; scale_eps += 5){
+				for (int scale_eps = 1; scale_eps < 40; scale_eps += 5){
 					
 					// resizing kernel_xy_size
-					for (int kernel_xy_size = 1; kernel_xy_size < 50; kernel_xy_size += 5){
+					for (int kernel_xy_size = 1; kernel_xy_size < 40; kernel_xy_size += 5){
 						
 						// resizing kernel_eps_size
-						for (int kernel_eps_size = 1; kernel_eps_size < 50; kernel_eps_size += 5){
+						for (int kernel_eps_size = 1; kernel_eps_size < 40; kernel_eps_size += 5){
 							
 							// start measuring the complete time of the filtering
 							cudaEvent_t start_kom, stop_kom;
