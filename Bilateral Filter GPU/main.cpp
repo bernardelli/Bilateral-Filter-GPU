@@ -28,11 +28,10 @@ int main(int argc, char **argv)
 	********************************************************************************/
 	checkingDevices();
 	
-	
 	/********************************************************************************
 	*** choose which GPU to run on                                                ***
 	********************************************************************************/
-	device = 0;
+	device = atoi(argv[1]);
 	cudaStatus = cudaSetDevice(device);
 	if (cudaStatus != cudaSuccess) {
 		fprintf(stderr, "cudaSetDevice failed!  Do you have a CUDA-capable GPU installed?");
@@ -66,8 +65,9 @@ int main(int argc, char **argv)
 #endif
 	
 	
-	
-	for (int repeating = 0; repeating < 10; repeating++){
+	int repeating = atoi( argv[2] );
+	printf("%d. iteration on %s\n", repeating, deviceProp.name);	
+	//for (int repeating = 0; repeating < 10; repeating++){
 		char filename[40];
 		sprintf(filename, "%s_%d.txt", deviceProp.name, repeating);
 		FILE* output_file = fopen(filename, "w");
@@ -226,7 +226,7 @@ int main(int argc, char **argv)
 							*** show filtered image and save image                                        ***
 							********************************************************************************/
 							char result_image_[200];
-							sprintf(result_image_, "/scratch-local/mapprakt4/result_images/Result_%d_%d_%d_%d_%d_%d.bmp", repeating, image.rows, scale_xy, scale_eps, kernel_xy_size, kernel_eps_size);
+							sprintf(result_image_, "/scratch-local/mapprakt4/result_images/%s_result_%d_%d_%d_%d_%d_%d.bmp", deviceProp.name, repeating, image.rows, scale_xy, scale_eps, kernel_xy_size, kernel_eps_size);
 							cv::imwrite(result_image_, output_imag);
 							cudaEventRecord(stop_kom);
 							cudaEventSynchronize(stop_kom);
@@ -247,7 +247,7 @@ int main(int argc, char **argv)
 			}
 		}
 		fclose(output_file);
-	}
+	//}
 	
 	
 	

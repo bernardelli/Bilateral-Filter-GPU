@@ -38,3 +38,11 @@ fast_bilateral: $(CPP_OBJS) $(CU_OBJS)
 
 clean:
 	rm -f fast_bilateral *.o *.cu_o
+
+ausfuehren:
+	for num in 0 2 ; do \
+		number=0 ; while [[ $$number -le 9 ]] ; do \
+			./fast_bilateral $$num $$number ; \
+			((number = number + 1)) ; \
+		done ; \
+	done
