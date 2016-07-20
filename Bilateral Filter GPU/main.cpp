@@ -31,7 +31,7 @@ int main(int argc, char **argv)
 	/********************************************************************************
 	*** choose which GPU to run on                                                ***
 	********************************************************************************/
-	device = 0;
+	device = 2;
 	cudaStatus = cudaSetDevice(device);
 	if (cudaStatus != cudaSuccess) {
 		fprintf(stderr, "cudaSetDevice failed!  Do you have a CUDA-capable GPU installed?");
