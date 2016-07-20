@@ -1,5 +1,5 @@
-#ifndef SLICING_H
-#define SLICING_H
+#ifndef SLICING_CUH
+#define SLICING_CUH
 
 #include "include_file.h"
 

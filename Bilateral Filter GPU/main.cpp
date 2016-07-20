@@ -1,9 +1,7 @@
 ﻿#include "include_file.h"
 
-
-#include "slicing.h"
-//#include "convolution.h"
-#include "convolution_shared.h"
+#include "slicing.cuh"
+#include "convolution_sep.cuh"
 #include "little_cuda_functions.h"
 #include "cubefilling.cuh"
 
@@ -18,7 +16,7 @@ int main(int argc, char **argv)
 	cv::Mat image;
 	int size, kernel_eps_size, kernel_xy_size, image_size, image_size_down, size_down;
 	float *kernel_eps, *kernel_xy, *dev_cube_wi, *dev_cube_w, *dev_cube_wi_out, 
-		*dev_cube_w_out, *dev_kernel_xy, *dev_kernel_eps, *dev_image, *result_image;//,dev_cube_wi_uplsampled, dev_cube_w_uplsampled;
+		*dev_cube_w_out, *dev_kernel_xy, *dev_kernel_eps, *dev_image, *result_image;
 	cudaError_t cudaStatus;
 
 
@@ -41,17 +39,14 @@ int main(int argc, char **argv)
 	*** define kernel                                                             ***
 	********************************************************************************/
 	float sigma_xy = 25.0f / scale_xy;
-	kernel_xy_size = 11;
+	kernel_xy_size = 3;
 	kernel_xy = (float*)malloc(kernel_xy_size*sizeof(float));
 	define_kernel(kernel_xy, sigma_xy, kernel_xy_size);
 
 	float sigma_eps = 25.0f / scale_eps;
-	kernel_eps_size = 11;
+	kernel_eps_size = 9;
 	kernel_eps = (float*)malloc(kernel_eps_size*sizeof(float));
 	define_kernel(kernel_eps, sigma_eps, kernel_eps_size);
-	/*Article:
-	A consistent approximation is a sampling rate proportional to the Gaussian bandwidth (i.e. ss
-	ss/sigmas ≈ sr /sigmar) to achieve similar accuracy on the whole SxR domain.*/
 
 	/********************************************************************************
 	*** loading image and display it on desktop                                   ***
@@ -65,7 +60,6 @@ int main(int argc, char **argv)
 	}
 	
 
-	//copyMakeBorder(image, image, sigma_xy / 2, sigma_xy / 2, sigma_xy / 2, sigma_xy / 2, IPL_BORDER_CONSTANT, 0);
 #ifndef  __linux__
 	cv::namedWindow("Original image", cv::WINDOW_AUTOSIZE);
 	cv::imshow("Original image", image);
@@ -73,11 +67,11 @@ int main(int argc, char **argv)
 	image.convertTo(image, CV_32F);
 	image_size = image.rows*image.cols;
 	size = image_size * 256;
-	image_size_down = floor((float)image.rows / (float)scale_xy)*floor((float)image.cols / (float)scale_xy);
+	image_size_down = (image.rows /scale_xy)*(image.cols / scale_xy);
 
-	size_down = image_size_down*floor((float)256 / (float)scale_eps);
+	size_down = image_size_down*(256 / scale_eps);
 	dim3 dimensions = dim3(image.rows, image.cols, 256);
-	dim3 dimensions_down = dim3(floor((float)image.rows / (float)scale_xy), floor((float)image.cols / (float)scale_xy), floor((float)256 / (float)scale_eps));
+	dim3 dimensions_down = dim3((image.rows / scale_xy), (image.cols / scale_xy), (256 / scale_eps));
 
 	
 	
@@ -98,8 +92,6 @@ int main(int argc, char **argv)
 	********************************************************************************/
 	cudaStatus = allocateGpuMemory(&dev_cube_wi, size_down);
 	cudaStatus = allocateGpuMemory(&dev_cube_w, size_down);
-	//cudaStatus = allocateGpuMemory(&dev_cube_wi_uplsampled, size);
-	//cudaStatus = allocateGpuMemory(&dev_cube_w_uplsampled, size);
 	cudaStatus = allocateGpuMemory(&dev_cube_wi_out, size_down);
 	cudaStatus = allocateGpuMemory(&dev_cube_w_out, size_down);
 	cudaStatus = allocateGpuMemory(&dev_kernel_xy, kernel_xy_size);
@@ -135,7 +127,7 @@ int main(int argc, char **argv)
 	/********************************************************************************
 	*** start concolution on gpu                                                  ***
 	********************************************************************************/
-	float convolution_time = callingConvolution_shared(dev_cube_wi_out, dev_cube_w_out, dev_cube_wi, dev_cube_w, dev_kernel_xy, kernel_xy_size, dev_kernel_eps, kernel_eps_size, dimensions_down, device);
+	float convolution_time = callingConvolution_sep(dev_cube_wi_out, dev_cube_w_out, dev_cube_wi, dev_cube_w, dev_kernel_xy, kernel_xy_size, dev_kernel_eps, kernel_eps_size, dimensions_down, device);
 	std::cout << "Convolution ok with time = " << convolution_time << " ms" << std::endl;
 	
 	
@@ -160,8 +152,6 @@ int main(int argc, char **argv)
 	cudaFree(dev_cube_wi);
 	cudaFree(dev_cube_w_out);
 	cudaFree(dev_cube_w);
-	//cudaFree(dev_cube_wi_upsampled);
-	//cudaFree(dev_cube_w_upsampled);
 	cudaFree(dev_kernel_xy);
 	cudaFree(dev_kernel_eps);
 	cudaFree(dev_image);
@@ -199,6 +189,6 @@ int main(int argc, char **argv)
 
 void define_kernel(float* output_kernel, float sigma, int size) {
 	for (int i = 0; i < size; i++) {
-		output_kernel[i] = 100.0f*expf(-0.5*powf((size / 2 - i) / sigma, 2));
+		output_kernel[i] = expf(-0.5*powf((size / 2.0f - i) / sigma, 2));
 	}
 }

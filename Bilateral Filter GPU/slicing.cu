@@ -1,4 +1,10 @@
-#include "slicing.h"
+/*
+Slicing:
+
+Perform slicing and nonlinearity. Uses texture unities.
+*/
+
+#include "slicing.cuh"
 
 texture<float, 3> wi_tex;
 texture<float, 3> w_tex;
@@ -8,7 +14,6 @@ __global__ void slicing( float *dev_image, const dim3 imsize, int scale_xy, int 
 	int i = blockIdx.x * blockDim.x + threadIdx.x;
 	int j = blockIdx.y * blockDim.y + threadIdx.y;
 
-	//Only valid threads perform memory I/O
 	if ((i < imsize.x) && (j < imsize.y))
 	{
 
@@ -18,54 +23,57 @@ __global__ void slicing( float *dev_image, const dim3 imsize, int scale_xy, int 
 		float y = 0.5f + (float)j / (float)scale_xy;
 		float z = 0.5f + (float)k / (float)scale_eps;
 
-		dev_image[i + imsize.x*j] = 256*tex3D(wi_tex, x, y, z) / tex3D(w_tex, x, y, z);
+		dev_image[i + imsize.x*j] = tex3D(wi_tex, x, y, z) / tex3D(w_tex, x, y, z);
 		
 	}
 
 }
 
-/*__global__ void fill_arrays(cudaArray* dev_cube_wi_array, cudaArray* dev_cube_w_array, const float* dev_cube_wi, const float* dev_cube_w, const dim3 )
-{
 
-	const int ix = blockDim.x*blockIdx.x + threadIdx.x;
-	const int iy = blockDim.y*blockIdx.y + threadIdx.y;
-	const int iz = blockIdx.z;
-	const int cube_idx = ix + iy*dimensions_down.x + iz*dimensions_down.x*dimensions_down.y;
-	if(ix < dimensions_down.x &&  iy < dimensions_down.y && iy < dimensions_down.y )
-	{
-		dev_cube_wi_array = dev_cube_wi[cube_idx];
-	}
-}*/
 
 float callingSlicing(float* dev_image, const float *dev_cube_wi, const float *dev_cube_w, const dim3 imsize, int scale_xy, int scale_eps, dim3 dimensions_down)
 {
+
+
 	int slicing_status = 0;
-	const dim3 block2(16, 16);
-	wi_tex.filterMode = cudaFilterModeLinear;      // linear interpolation
-	wi_tex.addressMode[0] = cudaAddressModeClamp; //cudaAddressModeClamp
+	cudaError_t cudaStatus;
+
+
+	/****************************************************************************************************************
+	***	Set Texture proprierties																				*****
+	*****************************************************************************************************************/
+	wi_tex.filterMode = cudaFilterModeLinear;
+	wi_tex.addressMode[0] = cudaAddressModeClamp; 
 	wi_tex.addressMode[1] = cudaAddressModeClamp;
 	wi_tex.addressMode[2] = cudaAddressModeClamp;
-	w_tex.filterMode = cudaFilterModeLinear;      // linear interpolation
+	w_tex.filterMode = cudaFilterModeLinear;      
 	w_tex.addressMode[0] = cudaAddressModeClamp;
 	w_tex.addressMode[1] = cudaAddressModeClamp;
 	w_tex.addressMode[2] = cudaAddressModeClamp;
-	cudaExtent extent1 = make_cudaExtent( dimensions_down.x*sizeof(float), dimensions_down.y, dimensions_down.z); 
-	cudaExtent extent2 = make_cudaExtent( dimensions_down.x, dimensions_down.y, dimensions_down.z); 
-	cudaArray *dev_cube_wi_array, *dev_cube_w_array;
 
+	/****************************************************************************************************************
+	***	Create 3D Arrays																						*****
+	*****************************************************************************************************************/
+
+	cudaArray *dev_cube_wi_array, *dev_cube_w_array;
+	cudaExtent extent = make_cudaExtent( dimensions_down.x, dimensions_down.y, dimensions_down.z); 
 	cudaChannelFormatDesc channelFloat = cudaCreateChannelDesc<float>();
-	cudaError_t cudaStatus = cudaMalloc3DArray(&dev_cube_wi_array, &channelFloat, extent2);
-	cudaStatus = cudaMalloc3DArray(&dev_cube_w_array, &channelFloat, extent2);
+
+	cudaStatus = cudaMalloc3DArray(&dev_cube_wi_array, &channelFloat, extent);
+	cudaStatus = cudaMalloc3DArray(&dev_cube_w_array, &channelFloat, extent);
+
 	if (cudaStatus != cudaSuccess) {
 		std::cout << "error on malloc3darray " << cudaGetErrorString(cudaStatus) << std::endl;
 	}
+
+	/*Copy arrays*/
 
 	cudaMemcpy3DParms copyParams1 = { 0 };
 	copyParams1.srcPtr = make_cudaPitchedPtr((void*) dev_cube_wi,
 		dimensions_down.x* sizeof(float), //https://devtalk.nvidia.com/default/topic/481806/copy-3d-data-from-host-to-device/
 		dimensions_down.x, dimensions_down.y);
 	copyParams1.dstArray = dev_cube_wi_array;
-	copyParams1.extent = extent2;
+	copyParams1.extent = extent;
 	copyParams1.kind = cudaMemcpyDeviceToDevice;
 	cudaStatus = cudaMemcpy3D(&copyParams1);
 
@@ -78,18 +86,15 @@ float callingSlicing(float* dev_image, const float *dev_cube_wi, const float *de
 		dimensions_down.x * sizeof(float),
 		dimensions_down.x, dimensions_down.y);
 	copyParams2.dstArray = dev_cube_w_array;
-	copyParams2.extent = extent2;
+	copyParams2.extent = extent;
 	copyParams2.kind = cudaMemcpyDeviceToDevice;
 	cudaStatus = cudaMemcpy3D(&copyParams2);
 	if (cudaStatus != cudaSuccess) {
 		std::cout << "error on copying to array2"<< std::endl;
 		slicing_status = 1;
 	}
-	//cudaMemcpyToArray(dev_cube_wi_array, 0, 0, dev_cube_wi, dimensions_down.x*dimensions_down.y*dimensions_down.z, cudaMemcpyDeviceToDevice);
-	//cudaMemcpyToArray(dev_cube_w_array, 0, 0, dev_cube_w, dimensions_down.x*dimensions_down.y*dimensions_down.z, cudaMemcpyDeviceToDevice);
-	//fill_arrays<<grid,block>>(dev_cube_wi_array, dev_cube_w_array,dev_cube_wi, dev_cube_w,dimensions_down);
 
-	//struct cudaChannelFormatDesc descr = cudaCreateChannelDesc((int)dimensions_down.x, (int)dimensions_down.y, (int)dimensions_down.z, cudaChannelFormatKindFloat);
+	/*Get texture references*/
 	const struct textureReference * wi_tex_ref;
 	const struct textureReference * w_tex_ref;
 	
@@ -105,49 +110,41 @@ float callingSlicing(float* dev_image, const float *dev_cube_wi, const float *de
 	if (cudaStatus != cudaSuccess) {
 		std::cout << "error on gettexref " << cudaGetErrorString(cudaStatus) << std::endl;
 	}
-		
-	cudaStatus = cudaBindTextureToArray(wi_tex_ref, dev_cube_wi_array, &channelFloat);//, cudaChannelFormatKindFloat); 	
-	cudaBindTextureToArray(w_tex_ref, dev_cube_w_array, &channelFloat);//, cudaChannelFormatKindFloat);
+	
+	/*Bind textures to array*/
+	cudaStatus = cudaBindTextureToArray(wi_tex_ref, dev_cube_wi_array, &channelFloat);
+	cudaStatus = cudaBindTextureToArray(w_tex_ref, dev_cube_w_array, &channelFloat);
 	
 	if (cudaStatus != cudaSuccess) {
 		std::cout << "error on bind text " << cudaGetErrorString(cudaStatus) << std::endl;
 	}
 	
+	/****************************************************************************************************************
+	***	Actual Slicing kernel																					*****
+	*****************************************************************************************************************/
 
-	const dim3 grid2(((imsize.x + block2.x - 1) / block2.x), ((imsize.y + block2.y - 1) / block2.y));
+	const dim3 block(16, 16);
+	const dim3 grid(((imsize.x + block.x - 1) / block.x), ((imsize.y + block.y - 1) / block.y));
 	
 	cudaEvent_t start_1, stop_1;
-        float time_1;
-        cudaEventCreate(&start_1);
-        cudaEventCreate(&stop_1);
+    float time_1;
+    cudaEventCreate(&start_1);
+    cudaEventCreate(&stop_1);
 
-        cudaEventRecord(start_1);
+    cudaEventRecord(start_1);
 
-	slicing <<< grid2, block2 >>> (dev_image, imsize, scale_xy, scale_eps);
+	slicing <<< grid, block >>> (dev_image, imsize, scale_xy, scale_eps);
 	
 	cudaEventRecord(stop_1);
-        cudaEventSynchronize(stop_1);
+    cudaEventSynchronize(stop_1);
 
-        cudaEventElapsedTime(&time_1, start_1, stop_1);
+    cudaEventElapsedTime(&time_1, start_1, stop_1);
+	float time = time_1;
 
-
-	cudaEvent_t start_2, stop_2;
-	float time_2;
-	cudaEventCreate(&start_2);
-	cudaEventCreate(&stop_2);
-	
-	cudaEventRecord(start_2);
-	slicing <<< grid2, block2 >>> (dev_image, imsize, scale_xy, scale_eps);
-	cudaDeviceSynchronize();
-	cudaEventRecord(stop_2);
-	cudaEventSynchronize(stop_2);
-	
-	cudaEventElapsedTime(&time_2, start_2, stop_2);
-	
-	cudaUnbindTexture(wi_tex);
-	cudaUnbindTexture(w_tex);
+	/*clean*/
+	cudaUnbindTexture(wi_tex_ref);
+	cudaUnbindTexture(w_tex_ref);
 	cudaFreeArray(dev_cube_wi_array);
 	cudaFreeArray(dev_cube_w_array);
-	float time = time_1 + time_2;
 	return time;
 }
