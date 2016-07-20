@@ -226,7 +226,7 @@ int main(int argc, char **argv)
 							*** show filtered image and save image                                        ***
 							********************************************************************************/
 							char result_image_[200];
-							sprintf(result_image_, "/scratch-local/mapprakt4/result_images/Result_%d_%d_%d_%d_%d.bmp", image.rows, scale_xy, scale_eps, kernel_xy_size, kernel_eps_size);
+							sprintf(result_image_, "/scratch-local/mapprakt4/result_images/Result_%d_%d_%d_%d_%d_%d.bmp", repeating, image.rows, scale_xy, scale_eps, kernel_xy_size, kernel_eps_size);
 							cv::imwrite(result_image_, output_imag);
 							cudaEventRecord(stop_kom);
 							cudaEventSynchronize(stop_kom);
