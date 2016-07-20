@@ -20,8 +20,6 @@ int main(int argc, char **argv)
 	char filename[40];
 	cudaError_t cudaStatus;
 	cudaDeviceProp deviceProp;
-
-
 	
 	
 	/********************************************************************************
@@ -221,7 +219,7 @@ int main(int argc, char **argv)
 							/********************************************************************************
 							*** show filtered image and save image                                        ***
 							********************************************************************************/
-							char result_image_[100];
+							char result_image_[200];
 							sprintf(result_image_, "/scratch-local/mapprakt4/result_images/Result_%d_%d_%d_%d_%d_%f_%f_%f_%f_%f_%f_%f.bmp", image.rows, scale_xy, scale_eps, kernel_xy_size, kernel_eps_size, cubefilling_time, convolution_time, slicing_time, time_allocate, time_gpumem1 + time_gpumem2, time_free, time_kom);
 							cv::imwrite(result_image_, output_imag);
 							cudaEventRecord(stop_kom);
