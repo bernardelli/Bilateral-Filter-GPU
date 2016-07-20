@@ -87,24 +87,19 @@ int main(int argc, char **argv)
 			// resizing scale_xy
 			for (int scale_xy = 1; scale_xy < 50; scale_xy += 2){
 				
-				image_size_down = (image.rows /scale_xy)*(image.cols / scale_xy);
+				
 				
 				// resizing scale_eps
 				for (int scale_eps = 1; scale_eps < 50; scale_eps += 2){
 					
-					size_down = image_size_down*(256 / scale_eps);
-					dim3 dimensions = dim3(image.rows, image.cols, 256);
-					dim3 dimensions_down = dim3((image.rows / scale_xy), (image.cols / scale_xy), (256 / scale_eps));
-
-					float sigma_xy = 25.0f / scale_xy;
+					
 					
 					// resizing kernel_xy_size
 					for (int kernel_xy_size = 1; kernel_xy_size < 50; kernel_xy_size += 2){
 						
 						
 						
-						kernel_xy = (float*)malloc(kernel_xy_size*sizeof(float));
-						define_kernel(kernel_xy, sigma_xy, kernel_xy_size);
+						
 						
 						// resizing kernel_eps_size
 						for (int kernel_eps_size = 1; kernel_eps_size < 50; kernel_eps_size += 2){
@@ -113,6 +108,17 @@ int main(int argc, char **argv)
 							cudaEventCreate(&start_kom);
 							cudaEventCreate(&stop_kom);
 							cudaEventRecord(start_kom);
+							
+							image_size_down = (image.rows /scale_xy)*(image.cols / scale_xy);
+							
+							size_down = image_size_down*(256 / scale_eps);
+							dim3 dimensions = dim3(image.rows, image.cols, 256);
+							dim3 dimensions_down = dim3((image.rows / scale_xy), (image.cols / scale_xy), (256 / scale_eps));
+
+							float sigma_xy = 25.0f / scale_xy;
+							kernel_xy = (float*)malloc(kernel_xy_size*sizeof(float));
+							define_kernel(kernel_xy, sigma_xy, kernel_xy_size);
+							
 							
 							float sigma_eps = 25.0f / scale_eps;
 							kernel_eps = (float*)malloc(kernel_eps_size*sizeof(float));
