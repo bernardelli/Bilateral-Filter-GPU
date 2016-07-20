@@ -13,14 +13,10 @@ void checkingDevices()
 	for (device = 0; device < deviceCount; ++device) {
 		cudaDeviceProp deviceProp;
 		cudaGetDeviceProperties(&deviceProp, device);
-		printf("Device %d has compute capability %d.%d and concurrentKernels = %d.\n",
-			device, deviceProp.major, deviceProp.minor, deviceProp.concurrentKernels);
+		printf("Device %d \(%s\) has compute capability %d.%d and concurrentKernels = %d.\n",
+			device, deviceProp.name, deviceProp.major, deviceProp.minor, deviceProp.concurrentKernels);
 	}
 	cudaDeviceReset();
-
-	
-
-	
 }
 
 cudaError_t allocateGpuMemory(float**ptr, int size)
