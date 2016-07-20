@@ -1,5 +1,6 @@
 ﻿#include "include_file.h"
 
+#include <unistd.h>
 #include "slicing.cuh"
 #include "convolution_sep.cuh"
 #include "little_cuda_functions.cuh"
@@ -31,7 +32,7 @@ int main(int argc, char **argv)
 	/********************************************************************************
 	*** choose which GPU to run on                                                ***
 	********************************************************************************/
-	device = 2;
+	device = 0;
 	cudaStatus = cudaSetDevice(device);
 	if (cudaStatus != cudaSuccess) {
 		fprintf(stderr, "cudaSetDevice failed!  Do you have a CUDA-capable GPU installed?");
@@ -233,8 +234,10 @@ int main(int argc, char **argv)
 							********************************************************************************/
 							fprintf(output_file, "%d\t%d\t%d\t%d\t%d\t%d\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n", 
 								repeating, image.rows, scale_xy, scale_eps, kernel_xy_size, kernel_eps_size, cubefilling_time, convolution_time, slicing_time, time_allocate, time_gpumem1 + time_gpumem2, time_free, time_kom);
+							
 						}
 					}
+				sleep(1);
 				}
 			}
 		}
