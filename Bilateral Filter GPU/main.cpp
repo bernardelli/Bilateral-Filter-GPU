@@ -85,10 +85,10 @@ int main(int argc, char **argv)
 				for (int scale_eps = 1; scale_eps < 50; scale_eps += 2){
 					
 					// resizing kernel_xy_size
-					for (int kernel_xy_size = 1; kernel_xy_size < 50; kernel_xy_size += 2){
+					for (int kernel_xy_size = 1; kernel_xy_size < 50; kernel_xy_size += 5){
 						
 						// resizing kernel_eps_size
-						for (int kernel_eps_size = 1; kernel_eps_size < 50; kernel_eps_size += 2){
+						for (int kernel_eps_size = 1; kernel_eps_size < 50; kernel_eps_size += 5){
 							
 							// start measuring the complete time of the filtering
 							cudaEvent_t start_kom, stop_kom;
