@@ -134,6 +134,7 @@ float callingSlicing(float* dev_image, const float *dev_cube_wi, const float *de
     cudaEventRecord(start_1);
 
 	slicing <<< grid, block >>> (dev_image, imsize, scale_xy, scale_eps);
+	cudaDeviceSynchronize();
 	
 	cudaEventRecord(stop_1);
     cudaEventSynchronize(stop_1);
