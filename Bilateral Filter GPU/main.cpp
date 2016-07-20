@@ -45,7 +45,7 @@ int main(int argc, char **argv)
 	cudaGetDeviceProperties(&deviceProp, device);
 	sprintf(filename, "%s.txt", deviceProp.name);
 	FILE* output_file = fopen(filename, "w");
-	fprintf(output_file,"%s\nImage size\tscale_xy\tscale_eps\tkernel_xy_size\tkernel_eps_size\tcubefilling\tconvolution\tslicing\ttime to allocate\ttime copy memory\ttime to free\tkomplete time\n\n", deviceProp.name);
+	fprintf(output_file,"%s\nRepeating\tImage size\tscale_xy\tscale_eps\tkernel_xy_size\tkernel_eps_size\tcubefilling\tconvolution\tslicing\ttime to allocate\ttime copy memory\ttime to free\tkomplete time\n\n", deviceProp.name);
 	
 
 	/********************************************************************************
@@ -220,7 +220,7 @@ int main(int argc, char **argv)
 							*** show filtered image and save image                                        ***
 							********************************************************************************/
 							char result_image_[200];
-							sprintf(result_image_, "/scratch-local/mapprakt4/result_images/Result_%d_%d_%d_%d_%d_%f_%f_%f_%f_%f_%f_%f.bmp", image.rows, scale_xy, scale_eps, kernel_xy_size, kernel_eps_size, cubefilling_time, convolution_time, slicing_time, time_allocate, time_gpumem1 + time_gpumem2, time_free, time_kom);
+							sprintf(result_image_, "/scratch-local/mapprakt4/result_images/Result_%d_%d_%d_%d_%d.bmp", image.rows, scale_xy, scale_eps, kernel_xy_size, kernel_eps_size);
 							cv::imwrite(result_image_, output_imag);
 							cudaEventRecord(stop_kom);
 							cudaEventSynchronize(stop_kom);
@@ -231,8 +231,8 @@ int main(int argc, char **argv)
 							/********************************************************************************
 							*** printing the solutions in an output file                                  ***
 							********************************************************************************/
-							fprintf(output_file, "%d\t%d\t%d\t%d\t%d\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n", 
-								image.rows, scale_xy, scale_eps, kernel_xy_size, kernel_eps_size, cubefilling_time, convolution_time, slicing_time, time_allocate, time_gpumem1 + time_gpumem2, time_free, time_kom);
+							fprintf(output_file, "%d\t%d\t%d\t%d\t%d\t%d\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n", 
+								repeating, image.rows, scale_xy, scale_eps, kernel_xy_size, kernel_eps_size, cubefilling_time, convolution_time, slicing_time, time_allocate, time_gpumem1 + time_gpumem2, time_free, time_kom);
 						}
 					}
 				}
