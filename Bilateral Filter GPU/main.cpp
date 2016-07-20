@@ -79,7 +79,7 @@ int main(int argc, char **argv)
 		// resizing the image size
 		for (float image_resizing = 0.1; image_resizing <= 1.09; image_resizing *= 0.1){
 			
-			cv::resize(image2, image, cv::Size(image2.cols * j, image2.rows * j), 0, 0, CV_INTER_LINEAR);
+			cv::resize(image2, image, cv::Size(image2.cols * image_resizing, image2.rows * image_resizing), 0, 0, CV_INTER_LINEAR);
 			image.convertTo(image, CV_32F);
 			image_size = image.rows*image.cols;
 			size = image_size * 256;
