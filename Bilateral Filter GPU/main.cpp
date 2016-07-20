@@ -77,7 +77,7 @@ int main(int argc, char **argv)
 	
 	for (int repeating = 0; repeating < 10; repeating++){
 		// resizing the image size
-		for (float image_resizing = 0.1; image_resizing <= 1.09; image_resizing *= 0.1){
+		for (float image_resizing = 0.1; image_resizing <= 0.29; image_resizing += 0.1){
 			
 			cv::resize(image2, image, cv::Size(image2.cols * image_resizing, image2.rows * image_resizing), 0, 0, CV_INTER_LINEAR);
 			image.convertTo(image, CV_32F);
