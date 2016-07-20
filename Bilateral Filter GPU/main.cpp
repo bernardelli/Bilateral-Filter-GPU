@@ -18,7 +18,7 @@ int main(int argc, char **argv)
 	int size, image_size, image_size_down, size_down, device;
 	float *kernel_eps, *kernel_xy, *dev_cube_wi, *dev_cube_w, *dev_cube_wi_out, 
 		*dev_cube_w_out, *dev_kernel_xy, *dev_kernel_eps, *dev_image, *result_image;
-	char filename[40];
+	
 	cudaError_t cudaStatus;
 	cudaDeviceProp deviceProp;
 	
@@ -44,9 +44,9 @@ int main(int argc, char **argv)
 	*** making the output file                                                    ***
 	********************************************************************************/
 	cudaGetDeviceProperties(&deviceProp, device);
-	sprintf(filename, "%s.txt", deviceProp.name);
-	FILE* output_file = fopen(filename, "w");
-	fprintf(output_file,"%s\nRepeating\tImage size\tscale_xy\tscale_eps\tkernel_xy_size\tkernel_eps_size\tcubefilling\tconvolution\tslicing\ttime to allocate\ttime copy memory\ttime to free\tkomplete time\n\n", deviceProp.name);
+//	sprintf(filename, "%s.txt", deviceProp.name);
+//	FILE* output_file = fopen(filename, "w");
+//	fprintf(output_file,"%s\nRepeating\tImage size\tscale_xy\tscale_eps\tkernel_xy_size\tkernel_eps_size\tcubefilling\tconvolution\tslicing\ttime to allocate\ttime copy memory\ttime to free\tkomplete time\n\n", deviceProp.name);
 	
 
 	/********************************************************************************
@@ -68,6 +68,11 @@ int main(int argc, char **argv)
 	
 	
 	for (int repeating = 0; repeating < 10; repeating++){
+		char filename[40];
+		sprintf(filename, "%s_%d.txt", deviceProp.name, repeating);
+		FILE* output_file = fopen(filename, "w");
+		fprintf(output_file,"%s\nRepeating\tImage size\tscale_xy\tscale_eps\tkernel_xy_size\tkernel_eps_size\tcubefilling\tconvolution\tslicing\ttime to allocate\ttime copy memory\ttime to free\tkomplete time\n\n", deviceProp.name);
+		
 		
 		// resizing the image size
 		for (float image_resizing = 0.1; image_resizing <= 1.09; image_resizing += 0.1){
@@ -241,9 +246,10 @@ int main(int argc, char **argv)
 				}
 			}
 		}
+		fclose(output_file);
 	}
 	
-	fclose(output_file);
+	
 	
 #ifndef  __linux__
 	cv::namedWindow("Filtered image", cv::WINDOW_AUTOSIZE);
