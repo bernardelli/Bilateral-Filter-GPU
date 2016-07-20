@@ -45,7 +45,7 @@ int main(int argc, char **argv)
 	*** making the output file                                                    ***
 	********************************************************************************/
 	cudaGetDeviceProperties(&deviceProp, device);
-	sprintf(filename, "%d.txt", deviceProp.name);
+	sprintf(filename, "%s.txt", deviceProp.name);
 	FILE* output_file = fopen(filename, "w");
 	fprintf(output_file,"%s\nImage size\tscale_xy\tscale_eps\tkernel_xy_size\tkernel_eps_size\tcubefilling\tconvolution\tslicing\ttime to allocate\ttime copy memory\ttime to free\tkomplete time\n\n", deviceProp.name);
 	
