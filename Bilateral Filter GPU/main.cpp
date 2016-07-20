@@ -79,10 +79,10 @@ int main(int argc, char **argv)
 			size = image_size * 256;
 			
 			// resizing scale_xy
-			for (int scale_xy = 1; scale_xy < 50; scale_xy += 2){
+			for (int scale_xy = 1; scale_xy < 50; scale_xy += 5){
 				
 				// resizing scale_eps
-				for (int scale_eps = 1; scale_eps < 50; scale_eps += 2){
+				for (int scale_eps = 1; scale_eps < 50; scale_eps += 5){
 					
 					// resizing kernel_xy_size
 					for (int kernel_xy_size = 1; kernel_xy_size < 50; kernel_xy_size += 5){
@@ -222,7 +222,7 @@ int main(int argc, char **argv)
 							*** show filtered image and save image                                        ***
 							********************************************************************************/
 							char result_image_[100];
-							sprintf(result_image_, "Result_%d_%d_%d_%d_%d_%f_%f_%f_%f_%f_%f_%f.bmp", image.rows, scale_xy, scale_eps, kernel_xy_size, kernel_eps_size, cubefilling_time, convolution_time, slicing_time, time_allocate, time_gpumem1 + time_gpumem2, time_free, time_kom);
+							sprintf(result_image_, "/scratch-local/mapprakt4/result_images/Result_%d_%d_%d_%d_%d_%f_%f_%f_%f_%f_%f_%f.bmp", image.rows, scale_xy, scale_eps, kernel_xy_size, kernel_eps_size, cubefilling_time, convolution_time, slicing_time, time_allocate, time_gpumem1 + time_gpumem2, time_free, time_kom);
 							cv::imwrite(result_image_, output_imag);
 							cudaEventRecord(stop_kom);
 							cudaEventSynchronize(stop_kom);
