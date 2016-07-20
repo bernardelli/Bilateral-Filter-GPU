@@ -183,13 +183,13 @@ int main(int argc, char **argv)
 							********************************************************************************/
 							//maybe use cudaPitchedPtr for cubes
 							float cubefilling_time = callingCubefilling(dev_image, dev_cube_wi, dev_cube_w, dimensions, scale_xy, scale_eps, dimensions_down);
-							std::cout << "Filling ok with time = " << cubefilling_time << " ms" << std::endl;
+							//std::cout << "Filling ok with time = " << cubefilling_time << " ms" << std::endl;
 							
 							/********************************************************************************
 							*** start concolution on gpu                                                  ***
 							********************************************************************************/
 							float convolution_time = callingConvolution_sep(dev_cube_wi_out, dev_cube_w_out, dev_cube_wi, dev_cube_w, dev_kernel_xy, kernel_xy_size, dev_kernel_eps, kernel_eps_size, dimensions_down, device);
-							std::cout << "Convolution ok with time = " << convolution_time << " ms" << std::endl;
+							//std::cout << "Convolution ok with time = " << convolution_time << " ms" << std::endl;
 							
 							
 							/********************************************************************************
@@ -198,7 +198,7 @@ int main(int argc, char **argv)
 							
 							result_image = (float*)malloc(image_size*sizeof(float));
 							float slicing_time = callingSlicing(dev_image, dev_cube_wi_out, dev_cube_w_out, dimensions,scale_xy, scale_eps, dimensions_down);
-							std::cout << "Slicing ok with time = " << slicing_time << " ms" << std::endl;
+							//std::cout << "Slicing ok with time = " << slicing_time << " ms" << std::endl;
 							
 							cudaEventRecord(start);
 							cudaMemcpy(result_image, dev_image, dimensions.x*dimensions.y*sizeof(float), cudaMemcpyDeviceToHost);
@@ -210,7 +210,7 @@ int main(int argc, char **argv)
 							cv::Mat output_imag(image.rows, image.cols, CV_32F, result_image);
 							
 							
-							std::cout << "Total time: " << cubefilling_time + convolution_time + slicing_time << " ms" << std::endl;
+							//std::cout << "Total time: " << cubefilling_time + convolution_time + slicing_time << " ms" << std::endl;
 							
 							
 							/********************************************************************************
