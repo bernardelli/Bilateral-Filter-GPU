@@ -66,10 +66,10 @@ int main(int argc, char **argv)
 	
 	
 	
-	for (int repeating = 0; repeating < 1; repeating++){
+	for (int repeating = 0; repeating < 10; repeating++){
 		
 		// resizing the image size
-		for (float image_resizing = 0.1; image_resizing <= 0.29; image_resizing += 0.1){
+		for (float image_resizing = 0.1; image_resizing <= 1.09; image_resizing += 0.1){
 			
 			cv::resize(image_original, image, cv::Size(image_original.cols * image_resizing, image_original.rows * image_resizing), 0, 0, CV_INTER_LINEAR);
 			image.convertTo(image, CV_32F);
