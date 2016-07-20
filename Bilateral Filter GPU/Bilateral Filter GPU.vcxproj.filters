@@ -22,10 +22,10 @@
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="include_file.h" />
-    <ClInclude Include="little_cuda_functions.h" />
     <ClInclude Include="cubefilling.cuh" />
     <ClInclude Include="slicing.cuh" />
     <ClInclude Include="convolution_sep.cuh" />
+    <ClInclude Include="little_cuda_functions.cuh" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />

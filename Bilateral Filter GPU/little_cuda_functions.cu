@@ -1,4 +1,4 @@
-#include "little_cuda_functions.h"
+#include "little_cuda_functions.cuh"
 
 void checkingDevices()
 {

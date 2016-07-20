@@ -2,7 +2,7 @@
 
 #include "slicing.cuh"
 #include "convolution_sep.cuh"
-#include "little_cuda_functions.h"
+#include "little_cuda_functions.cuh"
 #include "cubefilling.cuh"
 
 

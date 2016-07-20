@@ -1,7 +1,7 @@
 #ifndef CUBEFILLING_H
 #define CUBEFULLING_H
 
-#include "little_cuda_functions.h"
+#include "little_cuda_functions.cuh"
 #include "include_file.h"
 
 __global__ void cubefilling_cubefilling_atomic(const float* image, const dim3 image_size, int scale_xy, int scale_eps);

@@ -165,7 +165,7 @@ copy "$(CudaToolkitBinDir)\cudart*.dll" "$(OutDir)"</Command>
     <ClInclude Include="convolution_sep.cuh" />
     <ClInclude Include="cubefilling.cuh" />
     <ClInclude Include="include_file.h" />
-    <ClInclude Include="little_cuda_functions.h" />
+    <ClInclude Include="little_cuda_functions.cuh" />
     <ClInclude Include="slicing.cuh" />
     <ClInclude Include="stdafx.h">
       <DeploymentContent Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</DeploymentContent>

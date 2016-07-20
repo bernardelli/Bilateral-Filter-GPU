@@ -15,7 +15,7 @@ SHELL := env PATH=$(PATH) /bin/bash
 #/scratch-local/usr/include/
 
 CPP_SOURCES := main.cpp
-CU_SOURCES  := convolution_shared.cu \
+CU_SOURCES  := convolution_sep.cu \
                cubefilling.cu \
                little_cuda_functions.cu \
                slicing.cu
@@ -33,8 +33,8 @@ CU_OBJS     := $(patsubst %.cu, %.cu_o, $(CU_SOURCES))
 %.o: %.cpp
 	$(CXX) $(CFLAGS) -lcudart `pkg-config --libs opencv` `pkg-config --cflags opencv` -c $(CXXFLAGS) $(INCD) $(LIBS) -o $@ $<
 
-fbb: $(CPP_OBJS) $(CU_OBJS)
-	$(CXX) $(CFLAGS) -o fbb $(CU_OBJS) $(CPP_OBJS) $(LDFLAGS) $(INCD) $(LIBS)  `pkg-config --libs opencv` `pkg-config --cflags opencv`
+fast_bilateral: $(CPP_OBJS) $(CU_OBJS)
+	$(CXX) $(CFLAGS) -o fast_bilateral $(CU_OBJS) $(CPP_OBJS) $(LDFLAGS) $(INCD) $(LIBS)  `pkg-config --libs opencv` `pkg-config --cflags opencv`
 
 clean:
-	rm -f fbb *.o *.cu_o
+	rm -f fast_bilateral *.o *.cu_o
